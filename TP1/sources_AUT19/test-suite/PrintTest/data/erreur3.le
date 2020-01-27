@@ -1,5 +1,0 @@
-// Error test for if statement
-
-// missing parenthesis
-if i == 0
-    a = 1;

@@ -1,3 +1,0 @@
-// Error test for operation priorization
-
-a = 1 + + 2;

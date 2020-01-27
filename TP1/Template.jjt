@@ -1,0 +1,261 @@
+options {
+	JAVA_UNICODE_ESCAPE=true;
+	STATIC=false;					// 1 seul parseur actif a la fois (+ rapide)
+	MULTI=true;						// type noeud = f(nom noeud)
+	VISITOR=true;					// Cree une methode accept(visiteur)
+}
+
+//
+// PARSER DEFINITION
+//
+
+PARSER_BEGIN(Parser)
+
+package analyzer.ast;
+
+public class Parser
+{
+	public static ASTProgram ParseTree(java.io.InputStream input) throws ParseException
+	{
+		Parser c = new Parser(input);
+		return c.Program();
+	}
+}
+
+PARSER_END(Parser)
+
+//
+// LEXICAL ANALYSIS
+//
+
+// White space
+
+SKIP :
+{
+	< ( " " | "\t" | "\n" | "\r" )+	>
+}
+
+// Comments
+
+MORE :
+{
+  "//" : IN_SINGLE_LINE_COMMENT
+|
+  <"/**" ~["/"]> { input_stream.backup(1); } : IN_FORMAL_COMMENT
+|
+  "/*" : IN_MULTI_LINE_COMMENT
+}
+
+<IN_SINGLE_LINE_COMMENT>
+SPECIAL_TOKEN :
+{
+  <SINGLE_LINE_COMMENT: "\n" | "\r" | "\r\n" > : DEFAULT
+}
+
+<IN_FORMAL_COMMENT>
+SPECIAL_TOKEN :
+{
+  <FORMAL_COMMENT: "*/" > : DEFAULT
+}
+
+<IN_MULTI_LINE_COMMENT>
+SPECIAL_TOKEN :
+{
+  <MULTI_LINE_COMMENT: "*/" > : DEFAULT
+}
+
+<IN_SINGLE_LINE_COMMENT,IN_FORMAL_COMMENT,IN_MULTI_LINE_COMMENT>
+MORE :
+{
+  < ~[] >
+}
+
+
+
+
+// Keywords
+TOKEN :
+{
+	< IF: "if"	> |
+	< THEN: "then"	> |
+	< ELSE: "else" > |
+	< WHILE: "while" > |
+
+	< BOOLEAN : <TRUE> | <FALSE> > |
+	< #TRUE: "true" > |
+	< #FALSE: "false" > |
+	< MATCH: "match" > |
+	< WITH: "with" > |
+	< DO: "do" > |
+	< INPUT: "INPUT" > |
+	< OUTPUT: "OUTPUT" >
+
+}
+
+// Operators
+TOKEN :
+{
+	<ASSIGN: < EQUAL >  > |
+	<COMPARE: < LESS > | < LESSEQUAL > | < GREAT > | <GREATEQUAL > | < DIFF > | < EQUALEQUAL > > |
+    <MULOP: <FOIS> | <DIV> | <MOD>> |
+    <BOOLOP : <AND> | <OR> > |
+
+    //plus and minus doivent être séparer puisque Minus peut être utilisé seul.
+    < PLUS: "+" > |
+	< MINUS: "-" > |
+
+	< #EQUAL: "=" > |
+
+	< #LESS: "<" > |
+	< #LESSEQUAL: "<=" > |
+	< #GREAT: ">" > |
+	< #GREATEQUAL: ">=" > |
+	< #DIFF: "!=" > |
+	< #EQUALEQUAL: "==" > |
+
+
+	< #FOIS: "*" > |
+	< #DIV: "/" > |
+	< #MOD: "%" > |
+	< #POW: "**" >|
+    < #AND: "&&" > |
+    < #OR: "||" > |
+
+    < NOT: "!" > |
+
+	< LPAREN: "(" > |
+	< RPAREN: ")" > |
+	< LACC: "{" > |
+	< RACC: "}" > |
+	< COLON: ":" > |
+	< ENDSTMT : ";" > |
+	< COMMA: "," >
+	// À compléter au besoin
+}
+
+
+// Identifiers and numbers
+TOKEN :
+{
+	< IDENTIFIER: <LETTER> ( <LETTER> | <DIGIT> )* > |
+	< #LETTER: ["a"-"z","A"-"Z","_"] > |
+	< #DIGIT: ["0"-"9"] > |
+	< INTEGER: ["1"-"9"] (["0"-"9"])* | "0" > |
+	// // Caution! Allows numbers such as "0000.23"
+	< REAL: (<INTEGER>)+ "." (["0"-"9"])+ (<EXPONENT>)? |
+			  (<INTEGER>)+ <EXPONENT> > |
+	< #EXPONENT: ["e","E"] (["+","-"])? (["0"-"9"])+ >
+}
+
+
+
+
+
+
+
+//
+// SYNTAX ANALYSIS
+//
+
+ASTProgram Program() : { }
+{
+	Block() <EOF> { return jjtThis;  }
+}
+
+void Block() : { }
+{
+	 ( Stmt() | <LACC> Block() <RACC>)*
+}
+
+void Stmt() : { }
+{
+	AssignStmt() <ENDSTMT> |
+	IfStmt() |
+	WhileStmt() |
+	<ENDSTMT>
+}
+
+
+void IfStmt() : {}
+{
+    //TODO a finir
+     <IF> <LPAREN> Expr() <RPAREN> (
+     Stmt()|
+     (<LACC> Block() <RACC>)(<ELSE> (Stmt()|<LACC> Block() <RACC>))?)
+}
+
+void WhileStmt() : {}
+{
+    //TODO à finir
+     <WHILE> <LPAREN> Expr() <RPAREN> (Stmt()| <LACC> Block() <RACC>) //Gros S/O a Yujia
+}
+
+void AssignStmt() : {}
+{
+	Identifier() <ASSIGN> Expr()
+}
+
+
+void Expr() : {Token t;}
+{
+    //TODO À#0/30 compléter.#1/30
+    //TODO Vous pouvez modifier le contenu de cette règle et de toute les règles ayant#2/30 "Expr" dans leur nom,
+    //TODO et ajouter#3/30 de nouvelles#4/30 règles.
+    //TODO Pour simplifier la correction, garder#5/30 "Expr" à la fin de toutes#6/30 les nouvelles règles créees#7/30 pour
+    //TODO définir la grammaire des expressions.
+    ComExpr() (<BOOLOP> ComExpr() )*
+}
+
+void ComExpr() : { Token t;}
+{
+   (AddExpr()) (<COMPARE> AddExpr())*
+}
+
+void AddExpr() : { Token t;}
+{
+    (MulExpr())((<PLUS> | <MINUS>) MulExpr())*
+}
+
+void MulExpr() : { Token t;}
+{
+    (NegExpr()|GenValue()) (<MULOP> (NegExpr()|GenValue()))*
+}
+
+void NegExpr() : { Token t;}
+{
+    (<MINUS> GenValue() | NotExpr())
+}
+
+void NotExpr() : { Token t;}
+{
+    (<NOT>)+ GenValue()
+}
+
+void GenValue() : {}
+{
+    BoolValue()|
+	Identifier()|
+	IntValue() |
+	(<LPAREN> Expr() <RPAREN>)
+
+}
+
+void BoolValue() : { Token t;}
+{
+    t = <BOOLEAN>  {jjtThis.setValue(t.image);}
+}
+
+
+void Identifier() : { Token t;}
+{
+	t = <IDENTIFIER> {jjtThis.setValue(t.image);}
+}
+
+void IntValue() : { Token t;}
+{
+	t = <INTEGER> {jjtThis.setValue(Integer.parseInt(t.image));}
+}
+
+
+
+
