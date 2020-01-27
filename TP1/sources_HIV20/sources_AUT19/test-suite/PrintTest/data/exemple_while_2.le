@@ -1,5 +1,6 @@
 // Tests on while and do-while statement
 while (1) {
-    a = 4;
+    a = 4.6;
+    c = 7;
     b = 5;
 }
