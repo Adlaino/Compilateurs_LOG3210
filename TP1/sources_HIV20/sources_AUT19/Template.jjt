@@ -173,11 +173,6 @@ void Stmt() : { }
 	IfStmt() |
 	SwitchStmt() |
 	<SEMICOLON>
-	//maybe
-	//	AssignStmt() ";" |
-      	//	WhileStmt() |
-      	//	IfStmt() |
-      	//    IOStmt() ";"
 }
 
 void AssignStmt() : { Token t;}
@@ -199,8 +194,9 @@ void AssignStmt() : { Token t;}
   void IfStmt() : {}
   {
     <IF> <LPAREN> Expr() <RPAREN>  (
-    Stmt() |
-    (<LACC> Block() <RACC>) (<ELSE> (Stmt() | <LACC> Block() <RACC>))? )
+      Stmt() | (<LACC> Block() <RACC>)
+      (<ELSE> (IfStmt() | <LACC> Block() <RACC>) )?
+    )
 
   }
 
@@ -215,9 +211,6 @@ void AssignStmt() : { Token t;}
 void Expr() : {}
 {
     IntExpr()
-
-    //était ca
-    // AddExpr()
 }
 
 //void AddExpr() : { Token t;}
