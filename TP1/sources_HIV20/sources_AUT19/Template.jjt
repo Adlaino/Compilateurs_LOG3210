@@ -159,13 +159,13 @@ ASTProgram Program() : { }
 	Block() <EOF> { return jjtThis;  }
 }
 
-void Block() : { }
+void Block() #void: { }
 {
 	 ( Stmt() | <LACC> Block() <RACC> )*
 }
 
 
-void Stmt() : { }
+void Stmt() #void : { }
 {
 	AssignStmt() |
 	DoWhileStmt() |
@@ -208,7 +208,7 @@ void AssignStmt() : { Token t;}
     <RACC>
   }
 
-void Expr() : {}
+void Expr() #void : {}
 {
     IntExpr()
 }
@@ -223,39 +223,38 @@ void Expr() : {}
   //    )*
   //}
 
-void IntExpr() : {}
+void IntExpr() #void  : {}
 {
     IntComExpr() (<LOGIC> IntComExpr() )*
 }
 
-void IntComExpr() : { Token t;}
+void IntComExpr() #void  : { Token t;}
 {
-   (IntAddExpr()) (<COMPARE> IntAddExpr())*
+   ((IntAddExpr()) (<COMPARE> IntAddExpr())*) #Comparaison(>1)
 }
 
-void IntAddExpr() : { Token t;}
+void IntAddExpr() #void : { Token t;}
 {
-    //IntMulExpr() (<PLUS> | <MINUS>) IntMulExpr()
-    IntMulExpr() (LOOKAHEAD(2) (t = <PLUS> | t = <MINUS>) IntMulExpr() )*
+    (IntMulExpr() (LOOKAHEAD(2) (t = <PLUS> | t = <MINUS>) IntMulExpr() )*) #Addition(>1)
 }
 
-void IntMulExpr() : { Token t;}
+void IntMulExpr() #void : { Token t;}
 {
-  (IntNegExpr()|IntBasicExpr()) (<MULOP> (IntNegExpr()|IntBasicExpr()))*
+  ((IntNegExpr()|IntBasicExpr()) (<MULOP> (IntNegExpr()|IntBasicExpr()))*) #Multiplication(>1)
 }
 
-void IntNegExpr(): {Token t;}
+void IntNegExpr() #void : {Token t;}
 {
-    (<MINUS> IntBasicExpr() | IntNotExpr())
+    ((<MINUS> IntBasicExpr() | IntNotExpr())) #Subtraction(>1)
 }
 
-void IntNotExpr(): { Token t;}
+void IntNotExpr() #void : { Token t;}
  {
-     (<NOT>) + IntBasicExpr()
+     ((<NOT>) + IntBasicExpr()) #Négation(>1)
  }
 
 
-void IntBasicExpr() : {}
+void IntBasicExpr() #void : {}
 {
     BoolValue() |
     RealValue() |
