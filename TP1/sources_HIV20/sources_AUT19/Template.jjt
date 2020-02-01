@@ -137,10 +137,6 @@ TOKEN :
 	< INTEGER: ["0"-"9"] (["0"-"9"])* > |
 	// // Caution! Allows numbers such as "0000.23"
 	< REAL: (<INTEGER>)* "." ( (<INTEGER>)* (<EXPONENT>)? (<INTEGER>)* )   > |
-
-    //maybe
-	//< REAL: (<INTEGER>) + "." (<INTEGER>) + (<EXPONENT>)? |
-     // 			  (<INTEGER>) + <EXPONENT> > |
     < #EXPONENT: ["e","E"] (["+","-"])? (["0"-"9"])+ >
 }
 
@@ -161,7 +157,7 @@ ASTProgram Program() : { }
 
 void Block() #void: { }
 {
-	 ( Stmt() | <LACC> Block() <RACC> )*
+	( Stmt() | <LACC> Block() <RACC> )*
 }
 
 
@@ -180,57 +176,45 @@ void AssignStmt() : { Token t;}
 	Identifier() <ASSIGN> Expr()
 }
 
-//maybe
-  void WhileStmt() : {}
-  {
-   <WHILE> <LPAREN> Expr() <RPAREN> (Stmt()| <LACC> Block() <RACC>)
-  }
+void WhileStmt() : {}
+{
+	<WHILE> <LPAREN> Expr() <RPAREN> (Stmt()| <LACC> Block() <RACC>)
+}
 
-  void DoWhileStmt() : {}
-  {
-   <DO> <LACC> (Block()) <RACC> <WHILE> <LPAREN> Expr() <RPAREN>
-  }
+void DoWhileStmt() : {}
+{
+	<DO> <LACC> (Block()) <RACC> <WHILE> <LPAREN> Expr() <RPAREN>
+}
 
-  void IfStmt() : {}
-  {
-    <IF> <LPAREN> Expr() <RPAREN>  (
-      Stmt() | (<LACC> Block() <RACC>)
-      (<ELSE> (IfStmt() | <LACC> Block() <RACC>) )?
-    )
+void IfStmt() : {}
+{
+	<IF> <LPAREN> Expr() <RPAREN>  (
+		Stmt() | (<LACC> Block() <RACC>)
+		(<ELSE> (IfStmt() | <LACC> Block() <RACC>) )?
+	)
+}
 
-  }
-
-  void SwitchStmt() : {}
-  {
-    <SWITCH> <LPAREN> Expr() <RPAREN> <LACC>
-    (<CASE> Expr() <COLON>  (Block()))*
-    [<DEF> <COLON> (Block())]
-    <RACC>
-  }
+void SwitchStmt() : {}
+{
+	<SWITCH> <LPAREN> Expr() <RPAREN> <LACC>
+	(<CASE> Expr() <COLON>  (Block()))*
+	[<DEF> <COLON> (Block())]
+	<RACC>
+}
 
 void Expr() #void : {}
 {
     IntExpr()
 }
 
-//void AddExpr() : { Token t;}
-  //{
-  //    MultExpr() (
-  //        (t = "+" | t = "-") MultExpr()
-  //        {
-  //            jjtThis.addOp(t.image);
-  //        }
-  //    )*
-  //}
-
 void IntExpr() #void  : {}
 {
-    IntComExpr() (<LOGIC> IntComExpr() )*
+	IntComExpr() (<LOGIC> IntComExpr() )*
 }
 
 void IntComExpr() #void  : { Token t;}
 {
-   ((IntAddExpr()) (<COMPARE> IntAddExpr())*) #Comparaison(>1)
+	((IntAddExpr()) (<COMPARE> IntAddExpr())*) #Comparaison(>1)
 }
 
 void IntAddExpr() #void : { Token t;}
@@ -240,7 +224,7 @@ void IntAddExpr() #void : { Token t;}
 
 void IntMulExpr() #void : { Token t;}
 {
-  ((IntNegExpr()|IntBasicExpr()) (<MULOP> (IntNegExpr()|IntBasicExpr()))*) #Multiplication(>1)
+	((IntNegExpr()|IntBasicExpr()) (<MULOP> (IntNegExpr()|IntBasicExpr()))*) #Multiplication(>1)
 }
 
 void IntNegExpr() #void : {Token t;}
@@ -250,9 +234,8 @@ void IntNegExpr() #void : {Token t;}
 
 void IntNotExpr() #void : { Token t;}
  {
-     ((<NOT>) + IntBasicExpr()) #Négation(>1)
+    ((<NOT>) + IntBasicExpr()) #Négation(>1)
  }
-
 
 void IntBasicExpr() #void : {}
 {
@@ -265,7 +248,7 @@ void IntBasicExpr() #void : {}
 
 void BoolValue() : { Token t;}
 {
-  t = <BOOL>
+	t = <BOOL>
 }
 
 void Identifier() : { Token t;}
