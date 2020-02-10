@@ -154,7 +154,7 @@ public class SemantiqueVisitor implements ParserVisitor {
         */        
         if(node.jjtGetNumChildren()==1){ return node.jjtGetChild(0).jjtAccept(this,data);}
         else{
-            if(node.getValue().equals("==")|| node.getValue().equals("!=")){
+            if(node.getValue().equals("==") || node.getValue().equals("!=")){
                 VarType expected = (VarType)node.jjtGetChild(0).jjtAccept(this,data);
                 DataStruct lhs = new DataStruct(expected);
                 lhs.checkType((VarType)node.jjtGetChild(1).jjtAccept(this,data));//there is always only 2 children!
