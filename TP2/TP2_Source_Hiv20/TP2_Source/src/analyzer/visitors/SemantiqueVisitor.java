@@ -326,16 +326,19 @@ public class SemantiqueVisitor implements ParserVisitor {
     public Object visit(ASTGenValue node, Object data) {
         node.childrenAccept(this, data);
 
+        VarType tmp = (VarType)node.jjtGetChild(0).jjtAccept(this,data);
 
+        return tmp;
 
-        return null;
+        //return null;
     }
 
 
     @Override
     public Object visit(ASTBoolValue node, Object data) {
         ((DataStruct) data).type = VarType.Bool;
-        return null;
+        //return null;
+        return VarType.Bool;
     }
 
     @Override
@@ -354,7 +357,8 @@ public class SemantiqueVisitor implements ParserVisitor {
     @Override
     public Object visit(ASTIntValue node, Object data) {
         ((DataStruct) data).type = VarType.Number;
-        return null;
+       // return null;
+        return VarType.Number;
     }
 
 
