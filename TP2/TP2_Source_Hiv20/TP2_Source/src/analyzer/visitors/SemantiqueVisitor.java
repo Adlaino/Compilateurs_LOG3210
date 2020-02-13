@@ -163,7 +163,7 @@ public class SemantiqueVisitor implements ParserVisitor {
             throw new SemantiqueError("Invalid use of undefined Identifier " + ((ASTIdentifier)node.jjtGetChild(0)).getValue());
 
         node.childrenAccept(this, SymbolTable.get(((ASTIdentifier)node.jjtGetChild(0)).getValue()));
-        VAR++;
+        VAR++; //pas exactement la bonne place...
         return null;
 
         /*String varName = ((ASTIdentifier) node.jjtGetChild(0)).getValue();
