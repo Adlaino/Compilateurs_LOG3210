@@ -1,3 +1,5 @@
+//public class IntermediateCodeGenVisitor implements ParserVisitor {
+
 package analyzer.visitors;
 
 import analyzer.ast.*;
@@ -89,7 +91,7 @@ public class IntermediateCodeGenVisitor implements ParserVisitor {
 
     @Override
     public Object visit(ASTBlock node, Object data) {
-        node.childrenAccept(this, data);
+        node.childrenAccept(this, null);
         return null;
     }
 
@@ -107,10 +109,8 @@ public class IntermediateCodeGenVisitor implements ParserVisitor {
     public Object visit(ASTIfStmt node, Object data) {
 //        node.childrenAccept(this, data);
 
-
-        BoolLabel label = new BoolLabel();
         if(node.jjtGetNumChildren() == 2){
-
+            BoolLabel label = new BoolLabel();
             // B.true = newLabel();
             //B.false = S1.next = S.next;
             label.lTrue = genLabel();
@@ -124,6 +124,7 @@ public class IntermediateCodeGenVisitor implements ParserVisitor {
             node.jjtGetChild(1).jjtAccept(this, null);
         }
         else if(node.jjtGetNumChildren() == 3){
+            BoolLabel label = new BoolLabel();
             //B.true = newLabel()
             label.lTrue = genLabel();
             //B.false = newLabel()
@@ -152,7 +153,7 @@ public class IntermediateCodeGenVisitor implements ParserVisitor {
 
     @Override
     public Object visit(ASTWhileStmt node, Object data) {
-        node.childrenAccept(this, data); //pas sur s'il faut le laisser...
+        //node.childrenAccept(this, data); //pas sur s'il faut le laisser...
 
         BoolLabel label = new BoolLabel();
         //begin = newLabel()
@@ -287,7 +288,7 @@ public class IntermediateCodeGenVisitor implements ParserVisitor {
     la taille de ops sera toujours 1 de moins que la taille de jjtGetNumChildren
      */
     public String exprCodeGen(SimpleNode node, Object data, Vector<String> ops) {
-        node.childrenAccept(this, data);
+        // node.childrenAccept(this, data);
         int childNum = node.jjtGetNumChildren();
 
         if (childNum == 1) {
@@ -352,6 +353,7 @@ public class IntermediateCodeGenVisitor implements ParserVisitor {
         label.lFalse = genLabel();
         if(max>1) {
             node.jjtGetChild(0).jjtAccept(this, label);
+            m_writer.println(label.lTrue);  //where to look
             for(int i=1 ; i<max ; i++) {
                 if (node.getOps().get(i-1).toString().equals("||")) {
                     if(previousBool){
@@ -538,6 +540,9 @@ public class IntermediateCodeGenVisitor implements ParserVisitor {
     public Object visit(ASTSwitchStmt node, Object data) {
 
         node.childrenAccept(this, null);
+
+ //       toPrint = genLabel();
+   //     m_writer.println("goto " + toPrint);
         return null;
     }
 
