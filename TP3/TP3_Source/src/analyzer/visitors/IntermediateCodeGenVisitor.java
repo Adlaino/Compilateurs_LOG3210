@@ -61,7 +61,7 @@ public class IntermediateCodeGenVisitor implements ParserVisitor {
     /*
     Code fournis pour remplir la table de symbole.
     Les déclarations ne sont plus utile dans le code à trois adresse.
-    elle ne sont donc pas concervé.
+    elles ne sont donc pas concervé.
      */
     @Override
     public Object visit(ASTDeclaration node, Object data) {
@@ -94,6 +94,16 @@ public class IntermediateCodeGenVisitor implements ParserVisitor {
     @Override
     public Object visit(ASTIfStmt node, Object data) {
         node.childrenAccept(this, data);
+
+        if(node.jjtGetNumChildren() == 2){
+            B.true = newLabel();
+            B.false = S1.next = S.next;
+            S.code = B.code || label(B.true) || S1.code;
+        }
+        else{
+
+        }
+
         return null;
     }
 
