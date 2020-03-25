@@ -7,8 +7,8 @@
       <sourceFolder url="file://$MODULE_DIR$/gen-src" isTestSource="false" />
       <sourceFolder url="file://$MODULE_DIR$/test" isTestSource="true" />
     </content>
-    <orderEntry type="jdk" jdkName="1.8" jdkType="JavaSDK" />
     <orderEntry type="sourceFolder" forTests="false" />
+    <orderEntry type="jdk" jdkName="IntelliJ IDEA Community Edition IC-193.6015.39" jdkType="IDEA JDK" />
     <orderEntry type="module-library" scope="TEST">
       <library name="JUnit4">
         <CLASSES>
