@@ -1,8 +1,7 @@
 package analyzer.visitors;
 
 import analyzer.ast.*;
-import com.sun.org.apache.xpath.internal.operations.Bool;
-import sun.tools.java.Identifier;
+
 
 import java.io.ByteArrayOutputStream;
 import java.io.PrintWriter;
