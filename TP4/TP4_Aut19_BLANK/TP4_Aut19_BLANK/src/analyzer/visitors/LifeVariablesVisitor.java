@@ -129,24 +129,24 @@ public class LifeVariablesVisitor implements ParserVisitor {
 
     @Override
     public Object visit(ASTWhileStmt node, Object data) {
-        node.childrenAccept(this, data);
-        //TODO
-        /*node.jjtGetChild(0).jjtAccept(this,data);
+        Object visit = node.jjtGetChild(0).jjtAccept(this, data);
         HashSet<String> mem_previous_step = (HashSet<String>) previous_step.clone();
-        HashSet<String> if_previous_step;
-        if_previous_step = (HashSet<String>) previous_step.clone(); // if no else
+        HashSet<String> whilePrevStep = new HashSet<>();
+        String exprStep = "_step" + (step - 1);
+        whilePrevStep.add(exprStep);
 
-        for(int i=1; i < node.jjtGetNumChildren(); i++ ){
-            //reset previous for each block
-            previous_step = (HashSet<String>) mem_previous_step.clone();
+        for(int i = 1; i < node.jjtGetNumChildren(); i++ ) {
             node.jjtGetChild(i).jjtAccept(this,data);
-            for (String e : previous_step) {
-                if_previous_step.add(e);
+            for (String e : mem_previous_step) {
+                whilePrevStep.add(e);
             }
         }
-
-        previous_step = (HashSet<String>) if_previous_step.clone();*/
-        return null;
+        allSteps.get(exprStep).PRED.add("_step" + (step - 1));
+        for (String e : whilePrevStep) {
+            allSteps.get("_step" + (step - 1)).SUCC.add(e);
+        }
+        previous_step = (HashSet<String>) whilePrevStep.clone();
+        return visit;
     }
 
 
@@ -154,12 +154,7 @@ public class LifeVariablesVisitor implements ParserVisitor {
     public Object visit(ASTAssignStmt node, Object data) {      //toujours 2 childs
         node.childrenAccept(this, data);
         allSteps.get("_step" + (step - 1)).DEF.add(((ASTIdentifier) node.jjtGetChild(0)).getValue());
-        for (int i = 1; i < node.jjtGetNumChildren(); i++) {
-            String reference = (String) node.jjtGetChild(i).jjtAccept(this, data);
-            if (reference != null) {
-                allSteps.get("_step" + (step - 1)).REF.add(reference);
-            }
-        }
+        getREF(node, data);
         //System.out.println(data);
         //System.out.println(node.jjtGetNumChildren());
         //System.out.println(node.jjtGetChild(0).toString());     //identifier (dernier)
@@ -181,13 +176,8 @@ public class LifeVariablesVisitor implements ParserVisitor {
 
     @Override
     public Object visit(ASTBoolExpr node, Object data) {    //des fois 2 children, mais les 2 sont COMP EXPR
-        for (int i = 1; i < node.jjtGetNumChildren(); i++) {
-            String reference = (String) node.jjtGetChild(i).jjtAccept(this, data);
-            if (reference != null) {
-                allSteps.get("_step" + (step - 1)).REF.add(reference);
-            }
-        }
-        return node.jjGetChild(0).jjAccept(this, data);
+        getREF(node, data);
+        return node.jjtGetChild(0).jjtAccept(this, data);
         //System.out.println("BOOL EXPR");      //#2
         //System.out.println(node.jjtGetChild(0));
         //System.out.println(node.jjtGetNumChildren());
@@ -195,13 +185,8 @@ public class LifeVariablesVisitor implements ParserVisitor {
 
     @Override
     public Object visit(ASTCompExpr node, Object data) { //des fois 2 children, mais les 2 sont ADD EXPR
-        for (int i = 1; i < node.jjtGetNumChildren(); i++) {
-            String reference = (String) node.jjtGetChild(i).jjtAccept(this, data);
-            if (reference != null) {
-                allSteps.get("_step" + (step - 1)).REF.add(reference);
-            }
-        }
-        return node.jjGetChild(0).jjAccept(this, data);
+        getREF(node, data);
+        return node.jjtGetChild(0).jjtAccept(this, data);
         //System.out.println("COMP EXPR");      //#3
         //System.out.println(node.jjtGetChild(0));
         //System.out.println(node.jjtGetNumChildren());
@@ -209,13 +194,8 @@ public class LifeVariablesVisitor implements ParserVisitor {
 
     @Override
     public Object visit(ASTAddExpr node, Object data) { //des fois 2 children, mais les 2 sont MUL EXPR
-        for (int i = 1; i < node.jjtGetNumChildren(); i++) {
-            String reference = (String) node.jjtGetChild(i).jjtAccept(this, data);
-            if (reference != null) {
-                allSteps.get("_step" + (step - 1)).REF.add(reference);
-            }
-        }
-        return node.jjGetChild(0).jjAccept(this, data);
+        getREF(node, data);
+        return node.jjtGetChild(0).jjtAccept(this, data);
         //System.out.println("ADD EXPR");      //#4
         //System.out.println(node.jjtGetChild(0));
         //System.out.println(node.jjtGetNumChildren());
@@ -223,13 +203,8 @@ public class LifeVariablesVisitor implements ParserVisitor {
 
     @Override
     public Object visit(ASTMulExpr node, Object data) {  //rarement 2 children, les 2 UNA EXPR
-        for (int i = 1; i < node.jjtGetNumChildren(); i++) {
-            String reference = (String) node.jjtGetChild(i).jjtAccept(this, data);
-            if (reference != null) {
-                allSteps.get("_step" + (step - 1)).REF.add(reference);
-            }
-        }
-        return node.jjGetChild(0).jjAccept(this, data);
+        getREF(node, data);
+        return node.jjtGetChild(0).jjtAccept(this, data);
         //System.out.println("MUL EXPR");      //#5
         //System.out.println(node.jjtGetChild(0));
         //System.out.println(node.jjtGetNumChildren());
@@ -265,12 +240,7 @@ public class LifeVariablesVisitor implements ParserVisitor {
     @Override
     public Object visit(ASTIdentifier node, Object data) { //toujours 0 child //#9
         node.childrenAccept(this, data);
-        if(!("" + data).equals("null")){
-            // System.out.println(data);
-            // System.out.println(node.getValue());
-            allSteps.get(data.toString().substring(1,7)).DEF.add(node.getValue());
-        }
-        return node.getValue();
+        return "" +node.getValue();
     }
 
     //soit à ne rien faire, soit à mettre dans REF
@@ -340,5 +310,14 @@ public class LifeVariablesVisitor implements ParserVisitor {
 
     private void compute_IN_OUT() {
         return;
+    }
+
+    private void getREF(Node node, Object data) {
+        for (int i = 1; i < node.jjtGetNumChildren(); i++) {
+            String ref = (String)node.jjtGetChild(i).jjtAccept(this, data);
+            if (ref != null) {
+                allSteps.get("_step" + (step - 1)).REF.add(ref);
+            }
+        }
     }
 }
