@@ -153,6 +153,13 @@ public class LifeVariablesVisitor implements ParserVisitor {
     @Override
     public Object visit(ASTAssignStmt node, Object data) {      //toujours 2 childs
         node.childrenAccept(this, data);
+        allSteps.get("_step" + (step - 1)).DEF.add(((ASTIdentifier) node.jjtGetChild(0)).getValue());
+        for (int i = 1; i < node.jjtGetNumChildren(); i++) {
+            String ref = (String) node.jjtGetChild(i).jjtAccept(this, data);
+            if (ref != null) {
+                allSteps.get("_step" + (step - 1)).REF.add(ref);
+            }
+        }
         //System.out.println(data);
         //System.out.println(node.jjtGetNumChildren());
         //System.out.println(node.jjtGetChild(0).toString());     //identifier (dernier)
@@ -174,39 +181,58 @@ public class LifeVariablesVisitor implements ParserVisitor {
 
     @Override
     public Object visit(ASTBoolExpr node, Object data) {    //des fois 2 children, mais les 2 sont COMP EXPR
-        node.childrenAccept(this, data);
+        for (int i = 1; i < node.jjtGetNumChildren(); i++) {
+            String ref = (String) node.jjtGetChild(i).jjtAccept(this, data);
+            if (ref != null) {
+                allSteps.get("_step" + (step - 1)).REF.add(ref);
+            }
+        }
+        return node.jjGetChild(0).jjAccept(this, data);
         //System.out.println("BOOL EXPR");      //#2
         //System.out.println(node.jjtGetChild(0));
         //System.out.println(node.jjtGetNumChildren());
-        return null;
     }
 
     @Override
     public Object visit(ASTCompExpr node, Object data) { //des fois 2 children, mais les 2 sont ADD EXPR
-        node.childrenAccept(this, data);
+        for (int i = 1; i < node.jjtGetNumChildren(); i++) {
+            String ref = (String) node.jjtGetChild(i).jjtAccept(this, data);
+            if (ref != null) {
+                allSteps.get("_step" + (step - 1)).REF.add(ref);
+            }
+        }
+        return node.jjGetChild(0).jjAccept(this, data);
         //System.out.println("COMP EXPR");      //#3
         //System.out.println(node.jjtGetChild(0));
         //System.out.println(node.jjtGetNumChildren());
-        return null;
     }
 
     @Override
     public Object visit(ASTAddExpr node, Object data) { //des fois 2 children, mais les 2 sont MUL EXPR
-        node.childrenAccept(this, data);
+        for (int i = 1; i < node.jjtGetNumChildren(); i++) {
+            String ref = (String) node.jjtGetChild(i).jjtAccept(this, data);
+            if (ref != null) {
+                allSteps.get("_step" + (step - 1)).REF.add(ref);
+            }
+        }
+        return node.jjGetChild(0).jjAccept(this, data);
         //System.out.println("ADD EXPR");      //#4
         //System.out.println(node.jjtGetChild(0));
         //System.out.println(node.jjtGetNumChildren());
-        return null;
     }
 
     @Override
     public Object visit(ASTMulExpr node, Object data) {  //rarement 2 children, les 2 UNA EXPR
-        node.childrenAccept(this, data);
+        for (int i = 1; i < node.jjtGetNumChildren(); i++) {
+            String ref = (String) node.jjtGetChild(i).jjtAccept(this, data);
+            if (ref != null) {
+                allSteps.get("_step" + (step - 1)).REF.add(ref);
+            }
+        }
+        return node.jjGetChild(0).jjAccept(this, data);
         //System.out.println("MUL EXPR");      //#5
         //System.out.println(node.jjtGetChild(0));
         //System.out.println(node.jjtGetNumChildren());
-        return null;
-
     }
 
     @Override
