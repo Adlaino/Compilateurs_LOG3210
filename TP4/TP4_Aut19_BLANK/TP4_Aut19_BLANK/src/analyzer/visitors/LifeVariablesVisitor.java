@@ -111,7 +111,7 @@ public class LifeVariablesVisitor implements ParserVisitor {
             if_previous_step = (HashSet<String>) previous_step.clone(); // if no else
         }
         else {
-            if_previous_step = new HashSet<>(); // if there is a else
+            if_previous_step = new HashSet<>(); // if there is an else
         }
         for(int i=1; i < node.jjtGetNumChildren(); i++ ){
             //reset previous for each block
@@ -131,84 +131,135 @@ public class LifeVariablesVisitor implements ParserVisitor {
     public Object visit(ASTWhileStmt node, Object data) {
         node.childrenAccept(this, data);
         //TODO
+        /*node.jjtGetChild(0).jjtAccept(this,data);
+        HashSet<String> mem_previous_step = (HashSet<String>) previous_step.clone();
+        HashSet<String> if_previous_step;
+        if_previous_step = (HashSet<String>) previous_step.clone(); // if no else
+
+        for(int i=1; i < node.jjtGetNumChildren(); i++ ){
+            //reset previous for each block
+            previous_step = (HashSet<String>) mem_previous_step.clone();
+            node.jjtGetChild(i).jjtAccept(this,data);
+            for (String e : previous_step) {
+                if_previous_step.add(e);
+            }
+        }
+
+        previous_step = (HashSet<String>) if_previous_step.clone();*/
         return null;
     }
 
 
     @Override
-    public Object visit(ASTAssignStmt node, Object data) {
+    public Object visit(ASTAssignStmt node, Object data) {      //toujours 2 childs
         node.childrenAccept(this, data);
+        //System.out.println(data);
+        //System.out.println(node.jjtGetNumChildren());
+        //System.out.println(node.jjtGetChild(0).toString());     //identifier (dernier)
+        //System.out.println(node.jjtGetChild(1).toString());     //Expr    (premier)
+        //allSteps.get(data.toString().substring(1,7)).DEF.add(node.jjtGetChild(0).toString());
+        //allSteps.get(data.toString().substring(1,7)).DEF.add(node.jjtGetChild(1).toString());
         return null;
     }
 
 
     //Il n'y a probablement rien à faire ici
     @Override
-    public Object visit(ASTExpr node, Object data){
+    public Object visit(ASTExpr node, Object data){ //toujours 1 child
+        //System.out.println("EXPRESSION");     //#1
+        //System.out.println(node.jjtGetChild(0));
+        //System.out.println(node.jjtGetNumChildren());
         return node.jjtGetChild(0).jjtAccept(this, data);
     }
 
     @Override
-    public Object visit(ASTAddExpr node, Object data) {
+    public Object visit(ASTBoolExpr node, Object data) {    //des fois 2 children, mais les 2 sont COMP EXPR
         node.childrenAccept(this, data);
+        //System.out.println("BOOL EXPR");      //#2
+        //System.out.println(node.jjtGetChild(0));
+        //System.out.println(node.jjtGetNumChildren());
         return null;
     }
 
     @Override
-    public Object visit(ASTMulExpr node, Object data) {
+    public Object visit(ASTCompExpr node, Object data) { //des fois 2 children, mais les 2 sont ADD EXPR
         node.childrenAccept(this, data);
+        //System.out.println("COMP EXPR");      //#3
+        //System.out.println(node.jjtGetChild(0));
+        //System.out.println(node.jjtGetNumChildren());
         return null;
     }
 
     @Override
-    public Object visit(ASTUnaExpr node, Object data) {
+    public Object visit(ASTAddExpr node, Object data) { //des fois 2 children, mais les 2 sont MUL EXPR
         node.childrenAccept(this, data);
+        //System.out.println("ADD EXPR");      //#4
+        //System.out.println(node.jjtGetChild(0));
+        //System.out.println(node.jjtGetNumChildren());
         return null;
     }
 
     @Override
-    public Object visit(ASTBoolExpr node, Object data) {
+    public Object visit(ASTMulExpr node, Object data) {  //rarement 2 children, les 2 UNA EXPR
         node.childrenAccept(this, data);
+        //System.out.println("MUL EXPR");      //#5
+        //System.out.println(node.jjtGetChild(0));
+        //System.out.println(node.jjtGetNumChildren());
+        return null;
+
+    }
+
+    @Override
+    public Object visit(ASTUnaExpr node, Object data) { //toujours 1 child
+        node.childrenAccept(this, data);
+        //System.out.println("UNA EXPR");      //#6
+        //System.out.println(node.jjtGetChild(0));
+        //System.out.println(node.jjtGetNumChildren());
         return null;
     }
 
     @Override
-    public Object visit(ASTCompExpr node, Object data) {
+    public Object visit(ASTNotExpr node, Object data) { //toujours 1 child
         node.childrenAccept(this, data);
+        //System.out.println("NOT EXPR");      //#7
+        //System.out.println(node.jjtGetChild(0));
+        //System.out.println(node.jjtGetNumChildren());
         return null;
     }
 
     @Override
-    public Object visit(ASTNotExpr node, Object data) {
+    public Object visit(ASTGenValue node, Object data) { //toujours 1 child
         node.childrenAccept(this, data);
+        //System.out.println("GEN EXPR");      //#8
+        //System.out.println(node.jjtGetChild(0));
+        //System.out.println(node.jjtGetNumChildren());
         return null;
     }
 
     @Override
-    public Object visit(ASTGenValue node, Object data) {
+    public Object visit(ASTIdentifier node, Object data) { //toujours 0 child //#9
         node.childrenAccept(this, data);
-        return null;
+        if(!("" + data).equals("null")){
+            // System.out.println(data);
+            // System.out.println(node.getValue());
+            allSteps.get(data.toString().substring(1,7)).DEF.add(node.getValue());
+        }
+        return node.getValue();
     }
 
-    @Override
-    public Object visit(ASTBoolValue node, Object data) {
-        node.childrenAccept(this, data);
-        return null;
-    }
-
-    @Override
-    public Object visit(ASTIdentifier node, Object data) {
-        node.childrenAccept(this, data);
-        return null;
-    }
-
+    //soit à ne rien faire, soit à mettre dans REF
     @Override
     public Object visit(ASTIntValue node, Object data) {
         node.childrenAccept(this, data);
         return null;
     }
 
-
+    //jamais appellé//////////////////////////////////////////////////
+    @Override
+    public Object visit(ASTBoolValue node, Object data) {
+        node.childrenAccept(this, data);
+        return null;
+    }
 
     @Override
     public Object visit(ASTSwitchStmt node, Object data) {
@@ -226,7 +277,9 @@ public class LifeVariablesVisitor implements ParserVisitor {
     public Object visit(ASTDefaultStmt node, Object data) {
         node.childrenAccept(this, data);
         return null;
-    } 
+    }
+    //FIN de jamais appellé//////////////////////////////////////////////////
+
 
     //utile surtout pour envoyé de l'informations au enfant des expressions logiques.
     private class StepStatus {

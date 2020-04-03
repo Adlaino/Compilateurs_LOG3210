@@ -14,7 +14,7 @@ import java.util.HashMap;
  * Last Changed: 19-01-25
  * Author: Félix Brunet
  *
- * Description: Ce visiteur explorer l'AST est renvoie des exceptions lorqu'une erreur sémantique est détecté.
+ * Description: Ce visiteur explorer l'AST et renvoie des exceptions lorqu'une erreur sémantique est détecté.
  */
 
 public class SemantiqueVisitor implements ParserVisitor {
