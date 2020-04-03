@@ -237,29 +237,29 @@ public class LifeVariablesVisitor implements ParserVisitor {
 
     @Override
     public Object visit(ASTUnaExpr node, Object data) { //toujours 1 child
-        node.childrenAccept(this, data);
+        if (node.jjtGetChild(0).jjtAccept(this, data) != null) {
+            allSteps.get("_step" + (step - 1)).REF.add((String) node.jjtGetChild(0).jjtAccept(this, data));
+        }
+        return node.jjtGetChild(0).jjtAccept(this, data);
         //System.out.println("UNA EXPR");      //#6
         //System.out.println(node.jjtGetChild(0));
         //System.out.println(node.jjtGetNumChildren());
-        return null;
     }
 
     @Override
     public Object visit(ASTNotExpr node, Object data) { //toujours 1 child
-        node.childrenAccept(this, data);
+        return node.jjtGetChild(0).jjtAccept(this, data);
         //System.out.println("NOT EXPR");      //#7
         //System.out.println(node.jjtGetChild(0));
         //System.out.println(node.jjtGetNumChildren());
-        return null;
     }
 
     @Override
     public Object visit(ASTGenValue node, Object data) { //toujours 1 child
-        node.childrenAccept(this, data);
+        return node.jjtGetChild(0).jjtAccept(this, data);
         //System.out.println("GEN EXPR");      //#8
         //System.out.println(node.jjtGetChild(0));
         //System.out.println(node.jjtGetNumChildren());
-        return null;
     }
 
     @Override
