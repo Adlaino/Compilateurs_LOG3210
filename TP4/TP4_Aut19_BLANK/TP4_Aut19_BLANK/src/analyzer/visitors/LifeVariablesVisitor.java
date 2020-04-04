@@ -154,13 +154,12 @@ public class LifeVariablesVisitor implements ParserVisitor {
     public Object visit(ASTAssignStmt node, Object data) {      //toujours 2 childs
         node.childrenAccept(this, data);
         allSteps.get("_step" + (step - 1)).DEF.add(((ASTIdentifier) node.jjtGetChild(0)).getValue());
+        //allSteps.get("_step" + (step - 1)).OUT.add((String) node.jjtGetChild(0).jjtAccept(this, data));
         getREF(node, data);
         //System.out.println(data);
         //System.out.println(node.jjtGetNumChildren());
         //System.out.println(node.jjtGetChild(0).toString());     //identifier (dernier)
         //System.out.println(node.jjtGetChild(1).toString());     //Expr    (premier)
-        //allSteps.get(data.toString().substring(1,7)).DEF.add(node.jjtGetChild(0).toString());
-        //allSteps.get(data.toString().substring(1,7)).DEF.add(node.jjtGetChild(1).toString());
         return null;
     }
 
@@ -214,6 +213,7 @@ public class LifeVariablesVisitor implements ParserVisitor {
     public Object visit(ASTUnaExpr node, Object data) { //toujours 1 child
         if (node.jjtGetChild(0).jjtAccept(this, data) != null) {
             allSteps.get("_step" + (step - 1)).REF.add((String) node.jjtGetChild(0).jjtAccept(this, data));
+            allSteps.get("_step" + (step - 1)).IN.add((String) node.jjtGetChild(0).jjtAccept(this, data));
         }
         return node.jjtGetChild(0).jjtAccept(this, data);
         //System.out.println("UNA EXPR");      //#6
@@ -317,6 +317,9 @@ public class LifeVariablesVisitor implements ParserVisitor {
             String ref = (String)node.jjtGetChild(i).jjtAccept(this, data);
             if (ref != null) {
                 allSteps.get("_step" + (step - 1)).REF.add(ref);
+                allSteps.get("_step" + (step - 1)).OUT.add((String) node.jjtGetChild(0).jjtAccept(this, data));
+            }
+            else{
             }
         }
     }
