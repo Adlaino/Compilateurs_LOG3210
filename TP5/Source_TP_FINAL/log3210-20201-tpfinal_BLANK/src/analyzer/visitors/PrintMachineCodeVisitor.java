@@ -1,9 +1,9 @@
 package analyzer.visitors;
 
 import analyzer.ast.*;
-import com.sun.javafx.geom.Edge;
-import com.sun.org.apache.bcel.internal.generic.RET;
-import com.sun.org.apache.xpath.internal.operations.Bool;
+//import com.sun.javafx.geom.Edge;
+//import com.sun.org.apache.bcel.internal.generic.RET;
+//import com.sun.org.apache.xpath.internal.operations.Bool;
 
 import javax.crypto.Mac;
 import java.io.PrintWriter;
