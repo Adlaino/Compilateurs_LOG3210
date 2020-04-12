@@ -64,6 +64,7 @@ public class PrintMachineCodeVisitor implements ParserVisitor {
             RETURNED.add("@" + ((ASTIdentifier) node.jjtGetChild(i)).getValue()); // returned values (here are saved in "@*somthing*" format, you can change that if you want.
 
             // TODO: the returned variables should be added to the Life_OUT set of the last statement of the basic block (before the "ST" expressions in the machine code)
+
         }
 
         return null;
@@ -85,6 +86,7 @@ public class PrintMachineCodeVisitor implements ParserVisitor {
     public Object visit(ASTAssignStmt node, Object data) {
         // On ne visite pas les enfants puisque l'on va manuellement chercher leurs valeurs
         // On n'a rien a transférer aux enfants
+
         String assigned = (String) node.jjtGetChild(0).jjtAccept(this, null);
         String left     = (String) node.jjtGetChild(1).jjtAccept(this, null);
         String right    = (String) node.jjtGetChild(2).jjtAccept(this, null);
@@ -93,6 +95,65 @@ public class PrintMachineCodeVisitor implements ParserVisitor {
         // TODO: Modify CODE to add the needed MachLine.
         //       here the type of Assignment is "assigned = left op right" and you should put pointers in the MachLine at
         //       the moment (ex: "@a")
+
+        // if left or right do not exist before assigned, load them
+        // aka if it's not in LOADED, load them
+        boolean loadedLeft = false;
+        boolean loadedRight = false;
+
+        for(int i = 0; i < LOADED.size(); i++){
+            if(LOADED.get(i) == left){
+                loadedLeft = true;
+            }
+            if(LOADED.get(i) == right){
+                loadedRight = true;
+                System.out.println("right is found");
+            }
+        }
+
+        //if left was not loaded, then load it
+        if(loadedLeft == false){
+            LOADED.add(left);
+            List<String> leftCodeToPassBeforeOP = new ArrayList<String>();
+            leftCodeToPassBeforeOP.add("LD");
+            leftCodeToPassBeforeOP.add(left);
+            leftCodeToPassBeforeOP.add(left.substring(1, left.length()));
+
+            MachLine machineLine = new MachLine(leftCodeToPassBeforeOP);
+            CODE.add(machineLine);
+            //System.out.println(CODE);
+        }
+
+        if(loadedRight == false){
+            LOADED.add(right);
+            List<String> rightCodeToPassBeforeOP = new ArrayList<String>();
+            rightCodeToPassBeforeOP.add("LD");
+            rightCodeToPassBeforeOP.add(right);
+            rightCodeToPassBeforeOP.add(right.substring(1, right.length()));
+
+            MachLine machineLine = new MachLine(rightCodeToPassBeforeOP);
+            CODE.add(machineLine);
+            //System.out.println(CODE);
+        }
+
+        LOADED.add(assigned);
+        //System.out.println(LOADED.get(LOADED.size()-1) == assigned);
+        //System.out.println("Loaded: " + LOADED);
+
+        // add the operation
+        List<String> codeToPass = new ArrayList<String>();
+        codeToPass.add(OP.get(op));
+        codeToPass.add(assigned);
+        codeToPass.add(left);
+        codeToPass.add(right);
+
+        MachLine machineLine = new MachLine(codeToPass);
+        CODE.add(machineLine);
+
+
+        System.out.println(CODE);
+
+
         return null;
     }
 
@@ -193,7 +254,7 @@ public class PrintMachineCodeVisitor implements ParserVisitor {
             this.line = s;
             int size = CODE.size();
 
-            // PRED, SUCC, REF, DEF already computed (cadeau
+            // PRED, SUCC, REF, DEF already computed (cadeau)
             if (size > 0) {
                 PRED.add(size-1);
                 CODE.get(size-1).SUCC.add(size);
@@ -213,14 +274,14 @@ public class PrintMachineCodeVisitor implements ParserVisitor {
                 buff += ", " + line.get(i);
             buff +="\n";
             // you can uncomment the others set if you want to see them.
-            // buff += "// REF      : " +  REF.toString() +"\n";
-            // buff += "// DEF      : " +  DEF.toString() +"\n";
-            // buff += "// PRED     : " +  PRED.toString() +"\n";
-            // buff += "// SUCC     : " +  SUCC.toString() +"\n";
-            buff += "// Life_IN  : " +  Life_IN.toString() +"\n";
-            buff += "// Life_OUT : " +  Life_OUT.toString() +"\n";
-            buff += "// Next_IN  : " +  Next_IN.toString() +"\n";
-            buff += "// Next_OUT : " +  Next_OUT.toString() +"\n";
+            //buff += "// REF      : " +  REF.toString() +"\n";
+            //buff += "// DEF      : " +  DEF.toString() +"\n";
+            //buff += "// PRED     : " +  PRED.toString() +"\n";
+            //buff += "// SUCC     : " +  SUCC.toString() +"\n";
+            //buff += "// Life_IN  : " +  Life_IN.toString() +"\n";
+            //buff += "// Life_OUT : " +  Life_OUT.toString() +"\n";
+            //buff += "// Next_IN  : " +  Next_IN.toString() +"\n";
+            //buff += "// Next_OUT : " +  Next_OUT.toString() +"\n";
             return buff;
         }
     }
