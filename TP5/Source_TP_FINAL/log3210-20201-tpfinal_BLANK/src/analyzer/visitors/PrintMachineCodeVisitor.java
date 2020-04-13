@@ -60,6 +60,7 @@ public class PrintMachineCodeVisitor implements ParserVisitor {
 
     @Override
     public Object visit(ASTReturnStmt node, Object data) {
+
         for(int i = 0; i < node.jjtGetNumChildren(); i++) {
             RETURNED.add("@" + ((ASTIdentifier) node.jjtGetChild(i)).getValue()); // returned values (here are saved in "@*somthing*" format, you can change that if you want.
 
@@ -68,9 +69,25 @@ public class PrintMachineCodeVisitor implements ParserVisitor {
             CODE.get(CODE.size()-1).Life_OUT.add("@" + ((ASTIdentifier) node.jjtGetChild(i)).getValue());
             //System.out.println("Returned variable: " + "@" + ((ASTIdentifier) node.jjtGetChild(i)).getValue() + " added to the Life_OUT of: " + CODE.get(CODE.size()-1) );
 
-        }
+            //Selon moi (Roman), c'est ici qu'il faut faire les "ST"
+            for(int j = 0; j < MODIFIED.size(); j++){
+                if(RETURNED.get(i).equals(MODIFIED.get(j))){
+                    List<String> codeToPass = new ArrayList<String>();
+                    codeToPass.add("ST");
+                    codeToPass.add(RETURNED.get(i).substring(1));
+                    codeToPass.add(RETURNED.get(i));
 
+                    //System.out.println("ST " + RETURNED.get(i).substring(1) + ", " + RETURNED.get(i));
+
+                    MachLine machineLine = new MachLine(codeToPass);
+                    CODE.add(machineLine);
+                }
+            }
+
+        }
         //System.out.println(RETURNED);
+        //System.out.println(CODE);
+
 
         return null;
     }
