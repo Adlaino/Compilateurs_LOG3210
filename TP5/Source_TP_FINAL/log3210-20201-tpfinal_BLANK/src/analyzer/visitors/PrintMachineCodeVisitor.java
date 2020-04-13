@@ -65,7 +65,12 @@ public class PrintMachineCodeVisitor implements ParserVisitor {
 
             // TODO: the returned variables should be added to the Life_OUT set of the last statement of the basic block (before the "ST" expressions in the machine code)
 
+            CODE.get(CODE.size()-1).Life_OUT.add("@" + ((ASTIdentifier) node.jjtGetChild(i)).getValue());
+            //System.out.println("Returned variable: " + "@" + ((ASTIdentifier) node.jjtGetChild(i)).getValue() + " added to the Life_OUT of: " + CODE.get(CODE.size()-1) );
+
         }
+
+        //System.out.println(RETURNED);
 
         return null;
     }
@@ -102,65 +107,62 @@ public class PrintMachineCodeVisitor implements ParserVisitor {
         boolean loadedRight = false;
 
         for(int i = 0; i < LOADED.size(); i++){
-            if(LOADED.get(i) == left){
+            if(LOADED.get(i).equals(left)){
                 loadedLeft = true;
             }
-            if(LOADED.get(i) == right){
+            if(LOADED.get(i).equals(right)){
                 loadedRight = true;
-                System.out.println("right is found");
             }
         }
 
-        //if left was not loaded, then load it
-        if(loadedLeft == false){
-            LOADED.add(left);
-            List<String> leftCodeToPassBeforeOP = new ArrayList<String>();
-            leftCodeToPassBeforeOP.add("LD");
-            leftCodeToPassBeforeOP.add(left);
-            leftCodeToPassBeforeOP.add(left.substring(1, left.length()));
-
-            MachLine machineLine = new MachLine(leftCodeToPassBeforeOP);
-            CODE.add(machineLine);
-            //System.out.println(CODE);
-        }
-
-        if(loadedRight == false){
-            LOADED.add(right);
-            List<String> rightCodeToPassBeforeOP = new ArrayList<String>();
-            rightCodeToPassBeforeOP.add("LD");
-            rightCodeToPassBeforeOP.add(right);
-            rightCodeToPassBeforeOP.add(right.substring(1, right.length()));
-
-            MachLine machineLine = new MachLine(rightCodeToPassBeforeOP);
-            CODE.add(machineLine);
-            //System.out.println(CODE);
-        }
+        //if left or right was not loaded, then load it
+        addLoadToCODE(loadedLeft, left);
+        addLoadToCODE(loadedRight, right);
 
         LOADED.add(assigned);
-        //System.out.println(LOADED.get(LOADED.size()-1) == assigned);
-        //System.out.println("Loaded: " + LOADED);
+        MODIFIED.add(assigned);
 
         // add the operation
+        addToCODE(OP.get(op), assigned, left, right);
+
+        //System.out.println(LOADED);
+        //System.out.println(MODIFIED);
+        //System.out.println(CODE);
+
+        return null;
+    }
+
+    //variable is for example @a. so we pass left or right as variable
+    public void addLoadToCODE(boolean isLoaded, String variable){
+        if(!isLoaded){
+            LOADED.add(variable);
+            List<String> codeToPassBeforeOP = new ArrayList<String>();
+            codeToPassBeforeOP.add("LD");
+            codeToPassBeforeOP.add(variable);
+            codeToPassBeforeOP.add(variable.substring(1));
+
+            MachLine machineLine = new MachLine(codeToPassBeforeOP);
+            CODE.add(machineLine);
+        }
+    }
+
+    public void addToCODE(String operation, String assigned, String left, String right){
         List<String> codeToPass = new ArrayList<String>();
-        codeToPass.add(OP.get(op));
+        codeToPass.add(operation);
         codeToPass.add(assigned);
         codeToPass.add(left);
         codeToPass.add(right);
 
         MachLine machineLine = new MachLine(codeToPass);
         CODE.add(machineLine);
-
-
-        System.out.println(CODE);
-
-
-        return null;
     }
 
+    //ce cas n'existe même pas dans les tests, et quand on l'ajoute, ca fonctione pas....
     @Override
     public Object visit(ASTAssignUnaryStmt node, Object data) {
         // On ne visite pas les enfants puisque l'on va manuellement chercher leurs valeurs
         // On n'a rien a transférer aux enfants
+
         String assigned = (String) node.jjtGetChild(0).jjtAccept(this, null);
         String left = (String) node.jjtGetChild(1).jjtAccept(this, null);
 
@@ -168,19 +170,63 @@ public class PrintMachineCodeVisitor implements ParserVisitor {
         //       here the type of Assignment is "assigned = - left" and you should put pointers in the MachLine at
         //       the moment (ex: "@a")
 
+        boolean loadedLeft = false;
+        for(int i = 0; i < LOADED.size(); i++){
+            if(LOADED.get(i).equals(left)){
+                loadedLeft = true;
+            }
+        }
+
+        //if left was not loaded, then load it
+        addLoadToCODE(loadedLeft, left);
+
+        LOADED.add(assigned);
+        MODIFIED.add(assigned);
+
+        // add the operation
+        addToCODE("SUB", assigned, "#0", left);
+
+        //System.out.println(LOADED);
+        //System.out.println(MODIFIED);
+        //System.out.println(CODE);
+
         return null;
     }
+
+
 
     @Override
     public Object visit(ASTAssignDirectStmt node, Object data) {
         // On ne visite pas les enfants puisque l'on va manuellement chercher leurs valeurs
         // On n'a rien a transférer aux enfants
+
         String assigned = (String) node.jjtGetChild(0).jjtAccept(this, null);
         String left = (String) node.jjtGetChild(1).jjtAccept(this, null);
 
         // TODO: Modify CODE to add the needed MachLine.
         //       here the type of Assignment is "assigned = left" and you should put pointers in the MachLine at
         //       the moment (ex: "@a")
+
+        boolean loadedLeft = false;
+        for(int i = 0; i < LOADED.size(); i++){
+            if(LOADED.get(i).equals(left)){
+                loadedLeft = true;
+            }
+        }
+
+        //if left was not loaded, then load it
+        addLoadToCODE(loadedLeft, left);
+
+        LOADED.add(assigned);
+        MODIFIED.add(assigned);
+
+        // add the operation
+        addToCODE("ADD", assigned, "#0", left);
+
+        //System.out.println(LOADED);
+        //System.out.println(MODIFIED);
+        //System.out.println(CODE);
+
         return null;
     }
 
@@ -204,7 +250,7 @@ public class PrintMachineCodeVisitor implements ParserVisitor {
 
 
     private class NextUse {
-        // NextUse class implementation: you can use it or redo it you're way
+        // NextUse class implementation: you can use it or redo it your way
         public HashMap<String, ArrayList<Integer>> nextuse = new HashMap<String, ArrayList<Integer>>();
 
         public NextUse() {}
