@@ -351,6 +351,70 @@ public class PrintMachineCodeVisitor implements ParserVisitor {
 
     private void compute_LifeVar() {
         // TODO: Implement LifeVariable algorithm on the CODE array (for machine code)
+
+        Iterator it = CODE.iterator();
+        Stack<MachLine> workList = new Stack<>();
+
+        //on ajoute les stop nodes a la worklist
+        while(it.hasNext()){
+            Map.Entry pair = (Map.Entry)it.next();
+            if(((MachLine) pair.getValue()).SUCC.isEmpty()) {
+                //System.out.println(pair.getKey() + " :\n " + ((StepStatus) pair.getValue()));
+                workList.push((MachLine) pair.getValue());
+            }
+        }
+
+        while(!workList.isEmpty()){
+            // node = workList.pop();
+            MachLine node = (MachLine) workList.pop();
+
+            for(Integer succNode : node.SUCC){
+                // OUT[node] = OUT[node] union IN[succNode];
+                for (String inSuccNode : CODE.get(succNode).Life_IN){
+                    if(!node.Life_OUT.contains(inSuccNode)) { //not necessary
+                        node.Life_OUT.add(inSuccNode);
+                    }
+                }
+            }
+
+            // OLD_IN = IN[node];
+            HashSet<String> OLD_IN = node.Life_IN;
+
+            //IN[node] = (OUT[node] − DEF[node]) union REF[node];
+
+            //temp = OUT[node] - DEF[node]
+            HashSet temp = (HashSet)node.Life_OUT.clone();
+            for(String def : node.DEF){
+                if(temp.contains(def)){
+                    temp.remove(def);
+                }
+            }
+
+            //IN [ node ] = temp union REF[node]
+            for (String refNode : node.REF){
+                if(!temp.contains(refNode)) {
+                    temp.add(refNode);
+                }
+            }
+
+            node.Life_IN = temp;
+
+            // if (node.IN != OLD_IN)
+            boolean hashSetEqual = true;
+            for(String current: node.Life_IN){
+                if(!OLD_IN.contains(current)){
+                    hashSetEqual = false;
+                }
+            }
+
+            // if (node.IN != OLD_IN)
+            if(!hashSetEqual){
+                for(Integer predNode: node.PRED){
+                    workList.push(CODE.get(predNode));
+                }
+            }
+
+        }
     }
 
     private void compute_NextUse() {
