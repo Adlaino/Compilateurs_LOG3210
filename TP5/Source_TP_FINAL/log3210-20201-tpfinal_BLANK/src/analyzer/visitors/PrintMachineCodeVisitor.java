@@ -282,6 +282,7 @@ public class PrintMachineCodeVisitor implements ParserVisitor {
             }
             nextuse.get(s).add(i);
         }
+
         public String toString() {
             String buff = "";
             boolean first = true;
@@ -352,6 +353,8 @@ public class PrintMachineCodeVisitor implements ParserVisitor {
     private void compute_LifeVar() {
         // TODO: Implement LifeVariable algorithm on the CODE array (for machine code)
 
+        //clean Life_IN et Life_OUT si nécessaire
+
         Iterator it = CODE.iterator();
         Stack<MachLine> workList = new Stack<>();
 
@@ -419,6 +422,49 @@ public class PrintMachineCodeVisitor implements ParserVisitor {
 
     private void compute_NextUse() {
         // TODO: Implement NextUse algorithm on the CODE array (for machine code)
+
+        //clean Next_IN et Next_OUT si nécessaire
+
+        Iterator it = CODE.iterator();
+        Stack<MachLine> workList = new Stack<>();
+
+        //on ajoute les stop nodes a la worklist
+        while(it.hasNext()){
+            Map.Entry pair = (Map.Entry)it.next();
+            if(((MachLine) pair.getValue()).SUCC.isEmpty()) {
+                //System.out.println(pair.getKey() + " :\n " + ((StepStatus) pair.getValue()));
+                workList.push((MachLine) pair.getValue());
+            }
+        }
+
+        while(!workList.isEmpty()){
+            // node = workList.pop();
+            MachLine node = (MachLine) workList.pop();
+
+            for(Integer succNode : node.SUCC){
+                // OUT[node] = OUT[node] union IN[succNode];
+                node.Next_OUT.add(CODE.get(succNode).Next_IN.toString(), succNode);
+            }
+
+            // OLD_IN = IN[node];
+            NextUse OLD_IN = node.Next_IN;
+
+            //nouvelle partie
+
+
+            //for (v in REF[node])
+            //for()
+
+
+            // if (node.IN != OLD_IN)
+            if(node.Next_IN != OLD_IN){
+                for(Integer predNode : node.PRED){
+                    workList.push(CODE.get(predNode));
+                }
+            }
+
+        }
+
     }
 
     public void compute_machineCode() {
