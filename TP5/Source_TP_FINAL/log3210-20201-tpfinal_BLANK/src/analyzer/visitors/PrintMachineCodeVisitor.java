@@ -450,10 +450,21 @@ public class PrintMachineCodeVisitor implements ParserVisitor {
             NextUse OLD_IN = node.Next_IN;
 
             //nouvelle partie
-
+            for (String v : set_ordered(node.Next_OUT.nextuse.keySet())) {
+                if(!node.DEF.contains(v)){
+                    for(int i = 0 ; i < node.Next_OUT.nextuse.get(v).size(); i++){
+                        // à vérifier si le numéro de la ligne n'existe pas déjà dans Next_IN?
+                        node.Next_IN.add(v, node.Next_OUT.nextuse.get(v).get(i));
+                    }
+                }
+            }
 
             //for (v in REF[node])
-            //for()
+            for(String v : node.REF){
+                for(Integer succNode : node.SUCC){  //pas sûr
+                    node.Next_IN.add(v, succNode - 1);
+                }
+            }
 
 
             // if (node.IN != OLD_IN)
