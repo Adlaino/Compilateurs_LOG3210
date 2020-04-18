@@ -151,7 +151,7 @@ public class PrintMachineCodeVisitor implements ParserVisitor {
 
     //variable is for example @a. so we pass left or right as variable
     public void addLoadToCODE(boolean isLoaded, String variable){
-        if(!isLoaded){
+        if(!isLoaded && variable.charAt(0) != '#'){
             LOADED.add(variable);
             List<String> codeToPassBeforeOP = new ArrayList<String>();
             codeToPassBeforeOP.add("LD");
@@ -342,10 +342,10 @@ public class PrintMachineCodeVisitor implements ParserVisitor {
             //buff += "// DEF      : " +  DEF.toString() +"\n";
             //buff += "// PRED     : " +  PRED.toString() +"\n";
             //buff += "// SUCC     : " +  SUCC.toString() +"\n";
-            //buff += "// Life_IN  : " +  Life_IN.toString() +"\n";
-            //buff += "// Life_OUT : " +  Life_OUT.toString() +"\n";
-            //buff += "// Next_IN  : " +  Next_IN.toString() +"\n";
-            //buff += "// Next_OUT : " +  Next_OUT.toString() +"\n";
+            buff += "// Life_IN  : " +  set_ordered(Life_IN).toString() +"\n";
+            buff += "// Life_OUT : " +  set_ordered(Life_OUT).toString() +"\n";
+            buff += "// Next_IN  : " +  Next_IN.toString() +"\n";
+            buff += "// Next_OUT : " +  Next_OUT.toString() +"\n";
             return buff;
         }
     }
