@@ -1,4 +1,6 @@
-    private void compute_LifeVar() {
+//OLD VERSION   /////////////////////// 
+
+private void compute_LifeVar() {
         // TODO: Implement LifeVariable algorithm on the CODE array (for machine code)
 
         //clean Life_IN et Life_OUT si nécessaire
@@ -125,3 +127,37 @@
         }
 
     }
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+// old version btw

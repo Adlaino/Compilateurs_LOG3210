@@ -286,11 +286,25 @@ public class PrintMachineCodeVisitor implements ParserVisitor {
         public String toString() {
             String buff = "";
             boolean first = true;
+
+
             for (String k : set_ordered(nextuse.keySet())) {
                 if (! first) {
                     buff +=", ";
                 }
-                buff += k + ":" + nextuse.get(k);
+
+                buff += k + ":";
+
+                buff += "[";
+                for (int i = nextuse.get(k).size()-1; i >= 0; i--) {
+                    buff += nextuse.get(k).get(i);
+                    if(nextuse.get(k).size() > 1 && i != 0){
+                        buff += ", ";
+                    }
+                }
+                buff += "]";
+
+
                 first = false;
             }
             return buff;
