@@ -353,28 +353,19 @@ public class PrintMachineCodeVisitor implements ParserVisitor {
     private void compute_LifeVar() {
         // TODO: Implement LifeVariable algorithm on the CODE array (for machine code)
 
-        //clean Life_IN et Life_OUT si nécessaire
-
-        Iterator it = CODE.iterator();
         Stack<MachLine> workList = new Stack<>();
 
-        //on ajoute les stop nodes a la worklist
-        while(it.hasNext()){
-            Map.Entry pair = (Map.Entry)it.next();
-            if(((MachLine) pair.getValue()).SUCC.isEmpty()) {
-                //System.out.println(pair.getKey() + " :\n " + ((StepStatus) pair.getValue()));
-                workList.push((MachLine) pair.getValue());
-            }
-        }
+        //on ajoute les stop nodes à la worklist
+        workList.push(CODE.get(CODE.size() - 1));
 
         while(!workList.isEmpty()){
             // node = workList.pop();
-            MachLine node = (MachLine) workList.pop();
+            MachLine node = workList.pop();
 
             for(Integer succNode : node.SUCC){
                 // OUT[node] = OUT[node] union IN[succNode];
                 for (String inSuccNode : CODE.get(succNode).Life_IN){
-                    if(!node.Life_OUT.contains(inSuccNode)) { //not necessary
+                    if(!node.Life_OUT.contains(inSuccNode)) {
                         node.Life_OUT.add(inSuccNode);
                     }
                 }
@@ -425,54 +416,49 @@ public class PrintMachineCodeVisitor implements ParserVisitor {
 
         //clean Next_IN et Next_OUT si nécessaire
 
-        Iterator it = CODE.iterator();
         Stack<MachLine> workList = new Stack<>();
 
         //on ajoute les stop nodes a la worklist
-        while(it.hasNext()){
-            Map.Entry pair = (Map.Entry)it.next();
-            if(((MachLine) pair.getValue()).SUCC.isEmpty()) {
-                //System.out.println(pair.getKey() + " :\n " + ((StepStatus) pair.getValue()));
-                workList.push((MachLine) pair.getValue());
-            }
-        }
+        workList.push(CODE.get(CODE.size() - 1));
 
         while(!workList.isEmpty()){
             // node = workList.pop();
-            MachLine node = (MachLine) workList.pop();
+            MachLine node = workList.pop();
 
             for(Integer succNode : node.SUCC){
                 // OUT[node] = OUT[node] union IN[succNode];
-                node.Next_OUT.add(CODE.get(succNode).Next_IN.toString(), succNode);
-            }
-
-            // OLD_IN = IN[node];
-            NextUse OLD_IN = node.Next_IN;
-
-            //nouvelle partie
-            for (String v : set_ordered(node.Next_OUT.nextuse.keySet())) {
-                if(!node.DEF.contains(v)){
-                    for(int i = 0 ; i < node.Next_OUT.nextuse.get(v).size(); i++){
-                        // à vérifier si le numéro de la ligne n'existe pas déjà dans Next_IN?
-                        node.Next_IN.add(v, node.Next_OUT.nextuse.get(v).get(i));
+                //TODO: il y a une diffrénce ici
+                MachLine currentSucc = CODE.get(succNode);
+                for (Map.Entry<String, ArrayList<Integer>> entry : currentSucc.Next_IN.nextuse.entrySet()) {
+                    for (Integer value : entry.getValue()) {
+                        node.Next_OUT.add(entry.getKey(), value);
                     }
                 }
             }
 
-            //for (v in REF[node])
-            for(String v : node.REF){
-                for(Integer succNode : node.SUCC){  //pas sûr
-                    node.Next_IN.add(v, succNode - 1);
+            // OLD_IN = IN[node];
+            NextUse OLD_IN = (NextUse) node.Next_IN.clone();
+
+            //nouvelle partie
+            //TODO: il y a aussi une diffrénce ici
+            for (Map.Entry<String, ArrayList<Integer>> entry : node.Next_OUT.nextuse.entrySet()) {
+                if (!node.DEF.contains(entry.getKey())) {
+                    for (Integer value : entry.getValue()) {
+                        node.Next_IN.add(entry.getKey(), value);
+                    }
                 }
             }
-
-
-            // if (node.IN != OLD_IN)
-            if(node.Next_IN != OLD_IN){
-                for(Integer predNode : node.PRED){
+            for (String ref : node.REF) {
+                node.Next_IN.add(ref, CODE.indexOf(node));
+            }
+            if (!node.Next_IN.nextuse.equals(OLD_IN.nextuse)) {
+                for (Integer predNode : node.PRED) {
                     workList.push(CODE.get(predNode));
                 }
             }
+            //TODO: jusqu'à ici
+//            System.out.println("node: "+ node);
+//            System.out.println(worklist);
 
         }
 
@@ -480,8 +466,10 @@ public class PrintMachineCodeVisitor implements ParserVisitor {
 
     public void compute_machineCode() {
         // TODO: Implement machine code with graph coloring for register assignation (REG is the register limitation)
-        //       The pointers (ex: "@a") here should be replace by registers (ex: R0) respecting the coloring algorithm
+        //       The pointers (ex: "@a") here should be replaced by registers (ex: R0) respecting the coloring algorithm
         //       described in the TP requirements.
+
+
     }
 
 
