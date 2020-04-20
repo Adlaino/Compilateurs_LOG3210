@@ -441,7 +441,6 @@ public class PrintMachineCodeVisitor implements ParserVisitor {
 
             for(Integer succNode : node.SUCC){
                 // OUT[node] = OUT[node] union IN[succNode];
-                //TODO: il y a une diffrénce ici
                 MachLine currentSucc = CODE.get(succNode);
                 for (Map.Entry<String, ArrayList<Integer>> entry : currentSucc.Next_IN.nextuse.entrySet()) {
                     for (Integer value : entry.getValue()) {
@@ -454,7 +453,6 @@ public class PrintMachineCodeVisitor implements ParserVisitor {
             NextUse OLD_IN = (NextUse) node.Next_IN.clone();
 
             //nouvelle partie
-            //TODO: il y a aussi une diffrénce ici
             for (Map.Entry<String, ArrayList<Integer>> entry : node.Next_OUT.nextuse.entrySet()) {
                 if (!node.DEF.contains(entry.getKey())) {
                     for (Integer value : entry.getValue()) {
@@ -470,7 +468,6 @@ public class PrintMachineCodeVisitor implements ParserVisitor {
                     workList.push(CODE.get(predNode));
                 }
             }
-            //TODO: jusqu'à ici
 //            System.out.println("node: "+ node);
 //            System.out.println(worklist);
 
@@ -483,6 +480,80 @@ public class PrintMachineCodeVisitor implements ParserVisitor {
         //       The pointers (ex: "@a") here should be replaced by registers (ex: R0) respecting the coloring algorithm
         //       described in the TP requirements.
 
+        //System.out.println("CODE: " + CODE);
+
+        //géneration du graphe d'interferance  (partie 4)
+        HashMap<String, ArrayList<String>> grapheInterferance = new HashMap<>();
+        List<String> nodes = new ArrayList<String>();
+
+        for(MachLine line : CODE){
+            //System.out.println(line.Next_OUT.nextuse);
+
+            for (String k : set_ordered(line.Next_OUT.nextuse.keySet())) {
+                if(!nodes.contains(k)){
+                    nodes.add(k);
+                    grapheInterferance.put(k, new ArrayList<String>());
+                }
+
+                for (String j : set_ordered(line.Next_OUT.nextuse.keySet())) {
+
+                    if(!k.equals(j) && !grapheInterferance.get(k).contains(j)){
+                        grapheInterferance.get(k).add(j);
+                    }
+                }
+
+
+            }
+
+        }
+
+        Collections.sort(nodes);
+        //System.out.println("nodees: " + nodes);
+        System.out.println("grapheInterferance: " + grapheInterferance);
+
+        //partie 5:
+        List<String> nodesClone = new ArrayList<String>();
+        nodesClone.addAll(nodes);
+
+        Stack<String> nodesStack = new Stack<>();
+
+        System.out.println(REG);
+
+        while (grapheInterferance.size() != 0 && REG == 256){   //le REG == 256 est temporaire pour que ca fasse pas une boucle infinie
+
+            int biggestNodeNumberUnderREG = 0;
+            String nodeToStack = nodes.get(0);
+
+            for (String nodeJ : grapheInterferance.keySet()) {
+                //Sélectionnez le noeud ayant le nombre de voisin le plus proche et inferieur à REG.
+                if (biggestNodeNumberUnderREG < grapheInterferance.get(nodeJ).size() && grapheInterferance.get(nodeJ).size() < REG) {
+                    biggestNodeNumberUnderREG = grapheInterferance.get(nodeJ).size();
+                    nodeToStack = nodeJ;
+                }
+            }
+
+            System.out.println(grapheInterferance.size());
+            System.out.println(nodeToStack);
+
+
+            //Enlevez le noeud du graphe ainsi que ses arrêtes et "push" le noeud sur la stack.
+            grapheInterferance.remove(nodeToStack);
+            nodes.remove(nodeToStack);
+
+            for (String nodeK : grapheInterferance.keySet()) {
+                if (grapheInterferance.get(nodeK).contains(nodeToStack)) {
+                    grapheInterferance.get(nodeK).remove(nodeToStack);
+                }
+            }
+
+            System.out.println("grapheInterferance APRÈS: " + grapheInterferance);
+            nodesStack.push(nodeToStack);
+
+        }
+
+        System.out.println(nodesStack);
+
+        //e)
 
     }
 
