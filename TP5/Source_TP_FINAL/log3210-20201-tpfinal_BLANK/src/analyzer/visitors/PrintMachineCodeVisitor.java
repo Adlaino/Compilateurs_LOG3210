@@ -158,6 +158,8 @@ public class PrintMachineCodeVisitor implements ParserVisitor {
             codeToPassBeforeOP.add(variable);
             codeToPassBeforeOP.add(variable.substring(1));
 
+            //System.out.println("CODETOPASSBEFORE OP: " + codeToPassBeforeOP);
+
             MachLine machineLine = new MachLine(codeToPassBeforeOP);
             CODE.add(machineLine);
         }
@@ -483,11 +485,129 @@ public class PrintMachineCodeVisitor implements ParserVisitor {
         //System.out.println("CODE: " + CODE);
 
         //géneration du graphe d'interferance  (partie 4)
-        HashMap<String, ArrayList<String>> grapheInterferance = new HashMap<>();
         List<String> nodes = new ArrayList<String>();
+        HashMap<String, ArrayList<String>> grapheInterferance = new HashMap<String, ArrayList<String>>();
+        grapheInterferance = generateGrapheInterferance(grapheInterferance, nodes);
+
+        System.out.println("nodes: " + nodes);
+
+
+        //partie 5:
+        List<String> nodesClone = new ArrayList<String>();  //pas sûr si on aurait besoin de ca
+        nodesClone.addAll(nodes);
+
+        //cloner grapheInterferance
+        List<String> nodes2 = new ArrayList<String>();
+        HashMap<String, ArrayList<String>> grapheInterferance2 = new HashMap<String, ArrayList<String>>();
+        grapheInterferance2 = generateGrapheInterferance(grapheInterferance2, nodes2);
+
+        System.out.println("grapheInterferance:  " + grapheInterferance);
+        //System.out.println("grapheInterferance2: " + grapheInterferance2);
+
+        Stack<String> nodesStack = new Stack<>();
+
+        System.out.println(REG);
+
+        while (grapheInterferance.size() != 0 ){   //le REG == 256 est temporaire pour que ca fasse pas une boucle infinie
+
+            int biggestNodeNumberUnderREG = 0;
+            String nodeToStack = nodes.get(0);
+
+            for (String nodeJ : grapheInterferance.keySet()) {
+                //Sélectionnez le noeud ayant le nombre de voisin le plus proche et inferieur à REG.
+                if (biggestNodeNumberUnderREG < grapheInterferance.get(nodeJ).size() && grapheInterferance.get(nodeJ).size() < REG) {
+                    biggestNodeNumberUnderREG = grapheInterferance.get(nodeJ).size();
+                    nodeToStack = nodeJ;
+                }
+            }
+
+            //System.out.println(grapheInterferance.size());
+            //System.out.println(nodeToStack);
+
+            //Enlevez le noeud du graphe ainsi que ses arrêtes et "push" le noeud sur la stack.
+            grapheInterferance.remove(nodeToStack);
+            nodes.remove(nodeToStack);
+
+            for (String nodeK : grapheInterferance.keySet()) {
+                if (grapheInterferance.get(nodeK).contains(nodeToStack)) {
+                    grapheInterferance.get(nodeK).remove(nodeToStack);
+                }
+            }
+
+            nodesStack.push(nodeToStack);
+
+        }
+
+        System.out.println("grapheInterferance:  " + grapheInterferance);
+        //System.out.println("grapheInterferance2: " + grapheInterferance2);
+
+        System.out.println(nodesStack);
+
+        //e)
+
+        HashMap<String, Integer> colorMap = new HashMap<>();    //node, color
+
+        while (nodesStack.size() != 0){
+            int color = 0;
+            String popedNode = nodesStack.pop();
+            grapheInterferance.put(popedNode, new ArrayList<String>());
+
+            //ajoute des arrêts du popedNode
+            for(String nodeInGraph: set_ordered(grapheInterferance.keySet())){
+                if(grapheInterferance2.get(nodeInGraph).contains(popedNode)){
+                    grapheInterferance.get(nodeInGraph).add(popedNode);
+                }
+                if(grapheInterferance2.get(popedNode).contains(nodeInGraph)){
+                    grapheInterferance.get(popedNode).add(nodeInGraph);
+                }
+            }
+
+            //Collections.sort(grapheInterferance.get(popedNode));    //marche pas
+
+            for(String voisin: grapheInterferance.get(popedNode)){
+                //avant de faire le get, vérifier si le voisin existe dans colorMap?
+                if(colorMap.containsKey(voisin) && colorMap.get(voisin) == color){
+                    color++;
+                }
+            }
+
+            colorMap.put(popedNode, color);
+        }
+
+        System.out.println("grapheInterferance:  " + grapheInterferance);
+        System.out.println("colorMap: " + colorMap);
+
+
+        //itérer dans le CODE et changer les pointeurs ex : @a par ses registres
+        for(MachLine line : CODE){
+            //System.out.println("OLD: " + line.line.get(1));
+            String registerNumber = "R" + colorMap.get(line.line.get(1));
+
+            //System.out.println("line: " + line.line);
+            //System.out.println("Targeted variable: " + line.line.get(1));
+            //System.out.println("registerNumber: " + registerNumber);
+
+            line.line.set(1, registerNumber);
+
+            //System.out.println("line AFTER: " + line.line);
+
+        }
+
+    }
+
+
+    public List<String> set_ordered(Set<String> s) {
+        // function given to order a set in alphabetic order TODO: use it! or redo-it yourself
+        List<String> list = new ArrayList<String>(s);
+        Collections.sort(list);
+        return list;
+    }
+
+    // TODO: add any class you judge necessary, and explain them in the report. GOOD LUCK!
+    public HashMap<String, ArrayList<String>> generateGrapheInterferance(HashMap<String, ArrayList<String>> grapheInterferance, List<String> nodes){
+        //HashMap<String, ArrayList<String>> grapheInterferance = new HashMap<>();
 
         for(MachLine line : CODE){
-            //System.out.println(line.Next_OUT.nextuse);
 
             for (String k : set_ordered(line.Next_OUT.nextuse.keySet())) {
                 if(!nodes.contains(k)){
@@ -502,68 +622,12 @@ public class PrintMachineCodeVisitor implements ParserVisitor {
                     }
                 }
 
-
             }
 
         }
 
         Collections.sort(nodes);
         //System.out.println("nodees: " + nodes);
-        System.out.println("grapheInterferance: " + grapheInterferance);
-
-        //partie 5:
-        List<String> nodesClone = new ArrayList<String>();
-        nodesClone.addAll(nodes);
-
-        Stack<String> nodesStack = new Stack<>();
-
-        System.out.println(REG);
-
-        while (grapheInterferance.size() != 0 && REG == 256){   //le REG == 256 est temporaire pour que ca fasse pas une boucle infinie
-
-            int biggestNodeNumberUnderREG = 0;
-            String nodeToStack = nodes.get(0);
-
-            for (String nodeJ : grapheInterferance.keySet()) {
-                //Sélectionnez le noeud ayant le nombre de voisin le plus proche et inferieur à REG.
-                if (biggestNodeNumberUnderREG < grapheInterferance.get(nodeJ).size() && grapheInterferance.get(nodeJ).size() < REG) {
-                    biggestNodeNumberUnderREG = grapheInterferance.get(nodeJ).size();
-                    nodeToStack = nodeJ;
-                }
-            }
-
-            System.out.println(grapheInterferance.size());
-            System.out.println(nodeToStack);
-
-
-            //Enlevez le noeud du graphe ainsi que ses arrêtes et "push" le noeud sur la stack.
-            grapheInterferance.remove(nodeToStack);
-            nodes.remove(nodeToStack);
-
-            for (String nodeK : grapheInterferance.keySet()) {
-                if (grapheInterferance.get(nodeK).contains(nodeToStack)) {
-                    grapheInterferance.get(nodeK).remove(nodeToStack);
-                }
-            }
-
-            System.out.println("grapheInterferance APRÈS: " + grapheInterferance);
-            nodesStack.push(nodeToStack);
-
-        }
-
-        System.out.println(nodesStack);
-
-        //e)
-
+        return grapheInterferance;
     }
-
-
-    public List<String> set_ordered(Set<String> s) {
-        // function given to order a set in alphabetic order TODO: use it! or redo-it yourself
-        List<String> list = new ArrayList<String>(s);
-        Collections.sort(list);
-        return list;
-    }
-
-    // TODO: add any class you judge necessary, and explain them in the report. GOOD LUCK!
 }
