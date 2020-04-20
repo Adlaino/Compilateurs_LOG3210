@@ -487,7 +487,7 @@ public class PrintMachineCodeVisitor implements ParserVisitor {
         List<String> nodes = new ArrayList<String>();
 
         for(MachLine line : CODE){
-            System.out.println(line.Next_OUT.nextuse);
+            //System.out.println(line.Next_OUT.nextuse);
 
             for (String k : set_ordered(line.Next_OUT.nextuse.keySet())) {
                 if(!nodes.contains(k)){
@@ -512,10 +512,48 @@ public class PrintMachineCodeVisitor implements ParserVisitor {
         System.out.println("grapheInterferance: " + grapheInterferance);
 
         //partie 5:
+        List<String> nodesClone = new ArrayList<String>();
+        nodesClone.addAll(nodes);
+
+        Stack<String> nodesStack = new Stack<>();
+
+        System.out.println(REG);
+
+        while (grapheInterferance.size() != 0 && REG == 256){   //le REG == 256 est temporaire pour que ca fasse pas une boucle infinie
+
+            int biggestNodeNumberUnderREG = 0;
+            String nodeToStack = nodes.get(0);
+
+            for (String nodeJ : grapheInterferance.keySet()) {
+                //Sélectionnez le noeud ayant le nombre de voisin le plus proche et inferieur à REG.
+                if (biggestNodeNumberUnderREG < grapheInterferance.get(nodeJ).size() && grapheInterferance.get(nodeJ).size() < REG) {
+                    biggestNodeNumberUnderREG = grapheInterferance.get(nodeJ).size();
+                    nodeToStack = nodeJ;
+                }
+            }
+
+            System.out.println(grapheInterferance.size());
+            System.out.println(nodeToStack);
 
 
-        //stack pour les nodes
-        Stack<String> stack = new Stack<>();
+            //Enlevez le noeud du graphe ainsi que ses arrêtes et "push" le noeud sur la stack.
+            grapheInterferance.remove(nodeToStack);
+            nodes.remove(nodeToStack);
+
+            for (String nodeK : grapheInterferance.keySet()) {
+                if (grapheInterferance.get(nodeK).contains(nodeToStack)) {
+                    grapheInterferance.get(nodeK).remove(nodeToStack);
+                }
+            }
+
+            System.out.println("grapheInterferance APRÈS: " + grapheInterferance);
+            nodesStack.push(nodeToStack);
+
+        }
+
+        System.out.println(nodesStack);
+
+        //e)
 
     }
 
