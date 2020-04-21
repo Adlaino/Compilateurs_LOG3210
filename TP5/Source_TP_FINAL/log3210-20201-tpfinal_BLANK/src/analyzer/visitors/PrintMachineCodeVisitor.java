@@ -490,7 +490,7 @@ public class PrintMachineCodeVisitor implements ParserVisitor {
         HashMap<String, ArrayList<String>> grapheInterferance = new HashMap<String, ArrayList<String>>();
         grapheInterferance = generateGrapheInterferance(grapheInterferance, nodes);
 
-        //System.out.println("nodes: " + nodes);
+        System.out.println("nodes: " + nodes);
 
         //partie 5:
         List<String> nodesClone = new ArrayList<String>();  //pas sûr si on aurait besoin de ca
@@ -513,7 +513,7 @@ public class PrintMachineCodeVisitor implements ParserVisitor {
             int biggestNodeNumberUnderREG = 0;
             String nodeToStack = nodes.get(0);
 
-            for (String nodeJ : grapheInterferance.keySet()) {
+            for (String nodeJ : set_ordered(grapheInterferance.keySet())) {
                 //Sélectionnez le noeud ayant le nombre de voisin le plus proche et inferieur à REG.
                 if (biggestNodeNumberUnderREG < grapheInterferance.get(nodeJ).size() && grapheInterferance.get(nodeJ).size() < REG) {
                     biggestNodeNumberUnderREG = grapheInterferance.get(nodeJ).size();
@@ -521,8 +521,8 @@ public class PrintMachineCodeVisitor implements ParserVisitor {
                 }
             }
 
-            //System.out.println(grapheInterferance.size());
-            //System.out.println(nodeToStack);
+            System.out.println(nodeToStack);
+            System.out.println(grapheInterferance);
 
             //Enlevez le noeud du graphe ainsi que ses arrêtes et "push" le noeud sur la stack.
             grapheInterferance.remove(nodeToStack);
@@ -541,7 +541,7 @@ public class PrintMachineCodeVisitor implements ParserVisitor {
         //System.out.println("grapheInterferance:  " + grapheInterferance);
         System.out.println("grapheInterferance2: " + grapheInterferance2);
 
-        System.out.println(nodesStack);
+        System.out.println("Stack: " + nodesStack);
 
         //e)
         HashMap<String, Integer> colorMap = new HashMap<>();    //node, color
@@ -562,8 +562,8 @@ public class PrintMachineCodeVisitor implements ParserVisitor {
             }
 
             //Collections.sort(grapheInterferance.get(popedNode));    //marche pas
-            //System.out.println(grapheInterferance);
             //System.out.println(popedNode);
+            //System.out.println(grapheInterferance);
 
             List<Integer> voisins = new ArrayList<Integer>();
             for(String voisin: grapheInterferance.get(popedNode)){
