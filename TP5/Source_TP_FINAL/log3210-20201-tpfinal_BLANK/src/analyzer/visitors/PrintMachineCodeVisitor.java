@@ -544,7 +544,6 @@ public class PrintMachineCodeVisitor implements ParserVisitor {
         System.out.println(nodesStack);
 
         //e)
-
         HashMap<String, Integer> colorMap = new HashMap<>();    //node, color
 
         while (nodesStack.size() != 0){
