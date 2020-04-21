@@ -6,6 +6,7 @@ import analyzer.ast.*;
 //import com.sun.org.apache.xpath.internal.operations.Bool;
 
 import javax.crypto.Mac;
+import java.awt.image.ColorModel;
 import java.io.PrintWriter;
 import java.util.*;
 
@@ -489,8 +490,7 @@ public class PrintMachineCodeVisitor implements ParserVisitor {
         HashMap<String, ArrayList<String>> grapheInterferance = new HashMap<String, ArrayList<String>>();
         grapheInterferance = generateGrapheInterferance(grapheInterferance, nodes);
 
-        System.out.println("nodes: " + nodes);
-
+        //System.out.println("nodes: " + nodes);
 
         //partie 5:
         List<String> nodesClone = new ArrayList<String>();  //pas sûr si on aurait besoin de ca
@@ -538,8 +538,8 @@ public class PrintMachineCodeVisitor implements ParserVisitor {
 
         }
 
-        System.out.println("grapheInterferance:  " + grapheInterferance);
-        //System.out.println("grapheInterferance2: " + grapheInterferance2);
+        //System.out.println("grapheInterferance:  " + grapheInterferance);
+        System.out.println("grapheInterferance2: " + grapheInterferance2);
 
         System.out.println(nodesStack);
 
@@ -563,10 +563,19 @@ public class PrintMachineCodeVisitor implements ParserVisitor {
             }
 
             //Collections.sort(grapheInterferance.get(popedNode));    //marche pas
+            //System.out.println(grapheInterferance);
+            //System.out.println(popedNode);
 
+            List<Integer> voisins = new ArrayList<Integer>();
             for(String voisin: grapheInterferance.get(popedNode)){
-                //avant de faire le get, vérifier si le voisin existe dans colorMap?
-                if(colorMap.containsKey(voisin) && colorMap.get(voisin) == color){
+                if(colorMap.containsKey(voisin)){
+                    voisins.add(colorMap.get(voisin));
+                }
+            }
+
+            Collections.sort(voisins);
+            for(int i = 0; i<voisins.size(); i++){
+                if(voisins.get(i) == color){
                     color++;
                 }
             }
@@ -574,20 +583,24 @@ public class PrintMachineCodeVisitor implements ParserVisitor {
             colorMap.put(popedNode, color);
         }
 
-        System.out.println("grapheInterferance:  " + grapheInterferance);
+        //System.out.println("grapheInterferance:  " + grapheInterferance);
         System.out.println("colorMap: " + colorMap);
 
 
         //itérer dans le CODE et changer les pointeurs ex : @a par ses registres
         for(MachLine line : CODE){
-            //System.out.println("OLD: " + line.line.get(1));
-            String registerNumber = "R" + colorMap.get(line.line.get(1));
 
             //System.out.println("line: " + line.line);
             //System.out.println("Targeted variable: " + line.line.get(1));
             //System.out.println("registerNumber: " + registerNumber);
 
-            line.line.set(1, registerNumber);
+            for(int i = 0; i<line.line.size(); i++){
+
+                if(line.line.get(i).charAt(0) == '@'){
+                    String registerNumber = "R" + colorMap.get(line.line.get(i));
+                    line.line.set(i, registerNumber);
+                }
+            }
 
             //System.out.println("line AFTER: " + line.line);
 
