@@ -6,6 +6,7 @@ import analyzer.ast.*;
 //import com.sun.org.apache.xpath.internal.operations.Bool;
 
 import javax.crypto.Mac;
+import java.awt.image.ColorModel;
 import java.io.PrintWriter;
 import java.util.*;
 
@@ -157,6 +158,8 @@ public class PrintMachineCodeVisitor implements ParserVisitor {
             codeToPassBeforeOP.add("LD");
             codeToPassBeforeOP.add(variable);
             codeToPassBeforeOP.add(variable.substring(1));
+
+            //System.out.println("CODETOPASSBEFORE OP: " + codeToPassBeforeOP);
 
             MachLine machineLine = new MachLine(codeToPassBeforeOP);
             CODE.add(machineLine);
@@ -441,7 +444,6 @@ public class PrintMachineCodeVisitor implements ParserVisitor {
 
             for(Integer succNode : node.SUCC){
                 // OUT[node] = OUT[node] union IN[succNode];
-                //TODO: il y a une diffrénce ici
                 MachLine currentSucc = CODE.get(succNode);
                 for (Map.Entry<String, ArrayList<Integer>> entry : currentSucc.Next_IN.nextuse.entrySet()) {
                     for (Integer value : entry.getValue()) {
@@ -454,7 +456,6 @@ public class PrintMachineCodeVisitor implements ParserVisitor {
             NextUse OLD_IN = (NextUse) node.Next_IN.clone();
 
             //nouvelle partie
-            //TODO: il y a aussi une diffrénce ici
             for (Map.Entry<String, ArrayList<Integer>> entry : node.Next_OUT.nextuse.entrySet()) {
                 if (!node.DEF.contains(entry.getKey())) {
                     for (Integer value : entry.getValue()) {
@@ -470,7 +471,6 @@ public class PrintMachineCodeVisitor implements ParserVisitor {
                     workList.push(CODE.get(predNode));
                 }
             }
-            //TODO: jusqu'à ici
 //            System.out.println("node: "+ node);
 //            System.out.println(worklist);
 
@@ -482,28 +482,129 @@ public class PrintMachineCodeVisitor implements ParserVisitor {
         // TODO: Implement machine code with graph coloring for register assignation (REG is the register limitation)
         //       The pointers (ex: "@a") here should be replaced by registers (ex: R0) respecting the coloring algorithm
         //       described in the TP requirements.
-        HashMap<String, ArrayList<String>> interferenceGraph = new HashMap<>();
+
+        //System.out.println("CODE: " + CODE);
+
+        //géneration du graphe d'interferance  (partie 4)
         List<String> nodes = new ArrayList<String>();
+        HashMap<String, ArrayList<String>> grapheInterferance = new HashMap<String, ArrayList<String>>();
+        grapheInterferance = generateGrapheInterferance(grapheInterferance, nodes);
 
-        for(MachLine line : CODE){
-            System.out.println(line.Next_OUT.nextuse);
+        System.out.println("nodes: " + nodes);
 
-            for (String k : set_ordered(line.Next_OUT.nextuse.keySet())) {
-                if(!nodes.contains(k)){
-                    nodes.add(k);
-                    interferenceGraph.put(k, new ArrayList<String>());
-                }
+        //partie 5:
+        List<String> nodesClone = new ArrayList<String>();  //pas sûr si on aurait besoin de ca
+        nodesClone.addAll(nodes);
 
-                for (String j : set_ordered(line.Next_OUT.nextuse.keySet())) {
-                    if(!k.equals(j) && !interferenceGraph.get(k).contains(j)){
-                        interferenceGraph.get(k).add(j);
-                    }
+        //cloner grapheInterferance
+        List<String> nodes2 = new ArrayList<String>();
+        HashMap<String, ArrayList<String>> grapheInterferance2 = new HashMap<String, ArrayList<String>>();
+        grapheInterferance2 = generateGrapheInterferance(grapheInterferance2, nodes2);
+
+        System.out.println("grapheInterferance:  " + grapheInterferance);
+        //System.out.println("grapheInterferance2: " + grapheInterferance2);
+
+        Stack<String> nodesStack = new Stack<>();
+
+        System.out.println(REG);
+
+        while (grapheInterferance.size() != 0 ){   //le REG == 256 est temporaire pour que ca fasse pas une boucle infinie
+
+            int biggestNodeNumberUnderREG = 0;
+            String nodeToStack = nodes.get(0);
+
+            for (String nodeJ : set_ordered(grapheInterferance.keySet())) {
+                //Sélectionnez le noeud ayant le nombre de voisin le plus proche et inferieur à REG.
+                if (biggestNodeNumberUnderREG < grapheInterferance.get(nodeJ).size() && grapheInterferance.get(nodeJ).size() < REG) {
+                    biggestNodeNumberUnderREG = grapheInterferance.get(nodeJ).size();
+                    nodeToStack = nodeJ;
                 }
             }
+
+            System.out.println(nodeToStack);
+            System.out.println(grapheInterferance);
+
+            //Enlevez le noeud du graphe ainsi que ses arrêtes et "push" le noeud sur la stack.
+            grapheInterferance.remove(nodeToStack);
+            nodes.remove(nodeToStack);
+
+            for (String nodeK : grapheInterferance.keySet()) {
+                if (grapheInterferance.get(nodeK).contains(nodeToStack)) {
+                    grapheInterferance.get(nodeK).remove(nodeToStack);
+                }
+            }
+
+            nodesStack.push(nodeToStack);
+
         }
 
-        Collections.sort(nodes);
-        System.out.println("Interference Graph: " + interferenceGraph);
+        //System.out.println("grapheInterferance:  " + grapheInterferance);
+        System.out.println("grapheInterferance2: " + grapheInterferance2);
+
+        System.out.println("Stack: " + nodesStack);
+
+        //e)
+        HashMap<String, Integer> colorMap = new HashMap<>();    //node, color
+
+        while (nodesStack.size() != 0){
+            int color = 0;
+            String popedNode = nodesStack.pop();
+            grapheInterferance.put(popedNode, new ArrayList<String>());
+
+            //ajoute des arrêts du popedNode
+            for(String nodeInGraph: set_ordered(grapheInterferance.keySet())){
+                if(grapheInterferance2.get(nodeInGraph).contains(popedNode)){
+                    grapheInterferance.get(nodeInGraph).add(popedNode);
+                }
+                if(grapheInterferance2.get(popedNode).contains(nodeInGraph)){
+                    grapheInterferance.get(popedNode).add(nodeInGraph);
+                }
+            }
+
+            //Collections.sort(grapheInterferance.get(popedNode));    //marche pas
+            //System.out.println(popedNode);
+            //System.out.println(grapheInterferance);
+
+            List<Integer> voisins = new ArrayList<Integer>();
+            for(String voisin: grapheInterferance.get(popedNode)){
+                if(colorMap.containsKey(voisin)){
+                    voisins.add(colorMap.get(voisin));
+                }
+            }
+
+            Collections.sort(voisins);
+            for(int i = 0; i<voisins.size(); i++){
+                if(voisins.get(i) == color){
+                    color++;
+                }
+            }
+
+            colorMap.put(popedNode, color);
+        }
+
+        //System.out.println("grapheInterferance:  " + grapheInterferance);
+        System.out.println("colorMap: " + colorMap);
+
+
+        //itérer dans le CODE et changer les pointeurs ex : @a par ses registres
+        for(MachLine line : CODE){
+
+            //System.out.println("line: " + line.line);
+            //System.out.println("Targeted variable: " + line.line.get(1));
+            //System.out.println("registerNumber: " + registerNumber);
+
+            for(int i = 0; i<line.line.size(); i++){
+
+                if(line.line.get(i).charAt(0) == '@'){
+                    String registerNumber = "R" + colorMap.get(line.line.get(i));
+                    line.line.set(i, registerNumber);
+                }
+            }
+
+            //System.out.println("line AFTER: " + line.line);
+
+        }
+
     }
 
 
@@ -515,4 +616,30 @@ public class PrintMachineCodeVisitor implements ParserVisitor {
     }
 
     // TODO: add any class you judge necessary, and explain them in the report. GOOD LUCK!
+    public HashMap<String, ArrayList<String>> generateGrapheInterferance(HashMap<String, ArrayList<String>> grapheInterferance, List<String> nodes){
+        //HashMap<String, ArrayList<String>> grapheInterferance = new HashMap<>();
+
+        for(MachLine line : CODE){
+
+            for (String k : set_ordered(line.Next_OUT.nextuse.keySet())) {
+                if(!nodes.contains(k)){
+                    nodes.add(k);
+                    grapheInterferance.put(k, new ArrayList<String>());
+                }
+
+                for (String j : set_ordered(line.Next_OUT.nextuse.keySet())) {
+
+                    if(!k.equals(j) && !grapheInterferance.get(k).contains(j)){
+                        grapheInterferance.get(k).add(j);
+                    }
+                }
+
+            }
+
+        }
+
+        Collections.sort(nodes);
+        //System.out.println("nodees: " + nodes);
+        return grapheInterferance;
+    }
 }
