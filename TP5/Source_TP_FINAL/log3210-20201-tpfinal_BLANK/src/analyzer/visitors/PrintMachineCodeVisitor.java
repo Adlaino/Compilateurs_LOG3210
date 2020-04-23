@@ -490,7 +490,7 @@ public class PrintMachineCodeVisitor implements ParserVisitor {
         HashMap<String, ArrayList<String>> grapheInterferance = new HashMap<String, ArrayList<String>>();
         grapheInterferance = generateGrapheInterferance(grapheInterferance, nodes);
 
-        System.out.println("nodes: " + nodes);
+        //System.out.println("nodes: " + nodes);
 
         //partie 5:
         List<String> nodesClone = new ArrayList<String>();  //pas sûr si on aurait besoin de ca
@@ -501,12 +501,12 @@ public class PrintMachineCodeVisitor implements ParserVisitor {
         HashMap<String, ArrayList<String>> grapheInterferance2 = new HashMap<String, ArrayList<String>>();
         grapheInterferance2 = generateGrapheInterferance(grapheInterferance2, nodes2);
 
-        System.out.println("grapheInterferance:  " + grapheInterferance);
+        //System.out.println("grapheInterferance:  " + grapheInterferance);
         //System.out.println("grapheInterferance2: " + grapheInterferance2);
 
         Stack<String> nodesStack = new Stack<>();
 
-        System.out.println(REG);
+        //System.out.println(REG);
 
         while (grapheInterferance.size() != 0 ){   //le REG == 256 est temporaire pour que ca fasse pas une boucle infinie
 
@@ -521,8 +521,8 @@ public class PrintMachineCodeVisitor implements ParserVisitor {
                 }
             }
 
-            System.out.println(nodeToStack);
-            System.out.println(grapheInterferance);
+            //System.out.println(nodeToStack);
+            //System.out.println(grapheInterferance);
 
             //Enlevez le noeud du graphe ainsi que ses arrêtes et "push" le noeud sur la stack.
             grapheInterferance.remove(nodeToStack);
@@ -539,9 +539,9 @@ public class PrintMachineCodeVisitor implements ParserVisitor {
         }
 
         //System.out.println("grapheInterferance:  " + grapheInterferance);
-        System.out.println("grapheInterferance2: " + grapheInterferance2);
+        //System.out.println("grapheInterferance2: " + grapheInterferance2);
 
-        System.out.println("Stack: " + nodesStack);
+        //System.out.println("Stack: " + nodesStack);
 
         //e)
         HashMap<String, Integer> colorMap = new HashMap<>();    //node, color
@@ -583,7 +583,7 @@ public class PrintMachineCodeVisitor implements ParserVisitor {
         }
 
         //System.out.println("grapheInterferance:  " + grapheInterferance);
-        System.out.println("colorMap: " + colorMap);
+        //System.out.println("colorMap: " + colorMap);
 
 
         //itérer dans le CODE et changer les pointeurs ex : @a par ses registres
