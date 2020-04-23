@@ -493,9 +493,6 @@ public class PrintMachineCodeVisitor implements ParserVisitor {
         //System.out.println("nodes: " + nodes);
 
         //partie 5:
-        List<String> nodesClone = new ArrayList<String>();  //pas sûr si on aurait besoin de ca
-        nodesClone.addAll(nodes);
-
         //cloner grapheInterferance
         List<String> nodes2 = new ArrayList<String>();
         HashMap<String, ArrayList<String>> grapheInterferance2 = new HashMap<String, ArrayList<String>>();
@@ -561,10 +558,10 @@ public class PrintMachineCodeVisitor implements ParserVisitor {
                 }
             }
 
-            //Collections.sort(grapheInterferance.get(popedNode));    //marche pas
             //System.out.println(popedNode);
             //System.out.println(grapheInterferance);
 
+            //Coloration du graphe
             List<Integer> voisins = new ArrayList<Integer>();
             for(String voisin: grapheInterferance.get(popedNode)){
                 if(colorMap.containsKey(voisin)){
@@ -585,13 +582,8 @@ public class PrintMachineCodeVisitor implements ParserVisitor {
         //System.out.println("grapheInterferance:  " + grapheInterferance);
         //System.out.println("colorMap: " + colorMap);
 
-
         //itérer dans le CODE et changer les pointeurs ex : @a par ses registres
         for(MachLine line : CODE){
-
-            //System.out.println("line: " + line.line);
-            //System.out.println("Targeted variable: " + line.line.get(1));
-            //System.out.println("registerNumber: " + registerNumber);
 
             for(int i = 0; i<line.line.size(); i++){
 
@@ -600,8 +592,6 @@ public class PrintMachineCodeVisitor implements ParserVisitor {
                     line.line.set(i, registerNumber);
                 }
             }
-
-            //System.out.println("line AFTER: " + line.line);
 
         }
 
