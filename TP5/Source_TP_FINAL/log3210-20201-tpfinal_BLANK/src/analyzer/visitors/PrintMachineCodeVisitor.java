@@ -68,7 +68,6 @@ public class PrintMachineCodeVisitor implements ParserVisitor {
             // TODO: the returned variables should be added to the Life_OUT set of the last statement of the basic block (before the "ST" expressions in the machine code)
 
             CODE.get(CODE.size()-1).Life_OUT.add("@" + ((ASTIdentifier) node.jjtGetChild(i)).getValue());
-            //System.out.println("Returned variable: " + "@" + ((ASTIdentifier) node.jjtGetChild(i)).getValue() + " added to the Life_OUT of: " + CODE.get(CODE.size()-1) );
 
             //Selon moi (Roman), c'est ici qu'il faut faire les "ST"
             for(int j = 0; j < MODIFIED.size(); j++){
@@ -78,17 +77,12 @@ public class PrintMachineCodeVisitor implements ParserVisitor {
                     codeToPass.add(RETURNED.get(i).substring(1));
                     codeToPass.add(RETURNED.get(i));
 
-                    //System.out.println("ST " + RETURNED.get(i).substring(1) + ", " + RETURNED.get(i));
-
                     MachLine machineLine = new MachLine(codeToPass);
                     CODE.add(machineLine);
                 }
             }
 
         }
-        //System.out.println(RETURNED);
-        //System.out.println(CODE);
-
 
         return null;
     }
@@ -134,21 +128,38 @@ public class PrintMachineCodeVisitor implements ParserVisitor {
         }
 
         //if left or right was not loaded, then load it
-        addLoadToCODE(loadedLeft, left);
-        addLoadToCODE(loadedRight, right);
+        if(!isDivisionByOne(OP.get(op), assigned, left, right) && !isMultiplicationByOne(OP.get(op), assigned, left, right)){
 
-        LOADED.add(assigned);
-        MODIFIED.add(assigned);
+            addLoadToCODE(loadedLeft, left);
+            addLoadToCODE(loadedRight, right);
 
-        // add the operation
-        addToCODE(OP.get(op), assigned, left, right);
+            LOADED.add(assigned);
+            MODIFIED.add(assigned);
 
-        //System.out.println(LOADED);
-        //System.out.println(MODIFIED);
-        //System.out.println(CODE);
+            // add the operation
+            addToCODE(OP.get(op), assigned, left, right);
+        }
 
         return null;
     }
+
+    public boolean isDivisionByOne(String op, String assigned, String left, String right){
+        if(op.equals("DIV") && right.equals("#1") && assigned.equals(left)){
+            return true;
+        }
+        return false;
+    }
+
+    public boolean isMultiplicationByOne(String op, String assigned, String left, String right){
+        if(op.equals("MUL") && right.equals("#1") && assigned.equals(left)){
+            return true;
+        }
+        else if(op.equals("MUL") && left    .equals("#1") && assigned.equals(right)){
+            return true;
+        }
+        return false;
+    }
+
 
     //variable is for example @a. so we pass left or right as variable
     public void addLoadToCODE(boolean isLoaded, String variable){
@@ -158,8 +169,6 @@ public class PrintMachineCodeVisitor implements ParserVisitor {
             codeToPassBeforeOP.add("LD");
             codeToPassBeforeOP.add(variable);
             codeToPassBeforeOP.add(variable.substring(1));
-
-            //System.out.println("CODETOPASSBEFORE OP: " + codeToPassBeforeOP);
 
             MachLine machineLine = new MachLine(codeToPassBeforeOP);
             CODE.add(machineLine);
@@ -177,7 +186,6 @@ public class PrintMachineCodeVisitor implements ParserVisitor {
         CODE.add(machineLine);
     }
 
-    //ce cas n'existe même pas dans les tests, et quand on l'ajoute, ca fonctione pas....
     @Override
     public Object visit(ASTAssignUnaryStmt node, Object data) {
         // On ne visite pas les enfants puisque l'on va manuellement chercher leurs valeurs
@@ -206,10 +214,6 @@ public class PrintMachineCodeVisitor implements ParserVisitor {
         // add the operation
         addToCODE("SUB", assigned, "#0", left);
 
-        //System.out.println(LOADED);
-        //System.out.println(MODIFIED);
-        //System.out.println(CODE);
-
         return null;
     }
 
@@ -235,17 +239,16 @@ public class PrintMachineCodeVisitor implements ParserVisitor {
         }
 
         //if left was not loaded, then load it
-        addLoadToCODE(loadedLeft, left);
+        if(!assigned.equals(left)){ //réduction de code. si a = a, on le skip
+            addLoadToCODE(loadedLeft, left);
 
-        LOADED.add(assigned);
-        MODIFIED.add(assigned);
 
-        // add the operation
-        addToCODE("ADD", assigned, "#0", left);
+            LOADED.add(assigned);
+            MODIFIED.add(assigned);
 
-        //System.out.println(LOADED);
-        //System.out.println(MODIFIED);
-        //System.out.println(CODE);
+            // add the operation
+            addToCODE("ADD", assigned, "#0", left);
+        }
 
         return null;
     }
@@ -471,8 +474,6 @@ public class PrintMachineCodeVisitor implements ParserVisitor {
                     workList.push(CODE.get(predNode));
                 }
             }
-//            System.out.println("node: "+ node);
-//            System.out.println(worklist);
 
         }
 
@@ -483,14 +484,12 @@ public class PrintMachineCodeVisitor implements ParserVisitor {
         //       The pointers (ex: "@a") here should be replaced by registers (ex: R0) respecting the coloring algorithm
         //       described in the TP requirements.
 
-        //System.out.println("CODE: " + CODE);
 
         //géneration du graphe d'interferance  (partie 4)
         List<String> nodes = new ArrayList<String>();
         HashMap<String, ArrayList<String>> grapheInterferance = new HashMap<String, ArrayList<String>>();
         grapheInterferance = generateGrapheInterferance(grapheInterferance, nodes);
 
-        //System.out.println("nodes: " + nodes);
 
         //partie 5:
         //cloner grapheInterferance
@@ -498,14 +497,9 @@ public class PrintMachineCodeVisitor implements ParserVisitor {
         HashMap<String, ArrayList<String>> grapheInterferance2 = new HashMap<String, ArrayList<String>>();
         grapheInterferance2 = generateGrapheInterferance(grapheInterferance2, nodes2);
 
-        //System.out.println("grapheInterferance:  " + grapheInterferance);
-        //System.out.println("grapheInterferance2: " + grapheInterferance2);
-
         Stack<String> nodesStack = new Stack<>();
 
-        //System.out.println(REG);
-
-        while (grapheInterferance.size() != 0 ){   //le REG == 256 est temporaire pour que ca fasse pas une boucle infinie
+        while (grapheInterferance.size() != 0 ){
 
             int biggestNodeNumberUnderREG = 0;
             String nodeToStack = nodes.get(0);
@@ -517,9 +511,6 @@ public class PrintMachineCodeVisitor implements ParserVisitor {
                     nodeToStack = nodeJ;
                 }
             }
-
-            //System.out.println(nodeToStack);
-            //System.out.println(grapheInterferance);
 
             //Enlevez le noeud du graphe ainsi que ses arrêtes et "push" le noeud sur la stack.
             grapheInterferance.remove(nodeToStack);
@@ -534,11 +525,6 @@ public class PrintMachineCodeVisitor implements ParserVisitor {
             nodesStack.push(nodeToStack);
 
         }
-
-        //System.out.println("grapheInterferance:  " + grapheInterferance);
-        //System.out.println("grapheInterferance2: " + grapheInterferance2);
-
-        //System.out.println("Stack: " + nodesStack);
 
         //e)
         HashMap<String, Integer> colorMap = new HashMap<>();    //node, color
@@ -558,9 +544,6 @@ public class PrintMachineCodeVisitor implements ParserVisitor {
                 }
             }
 
-            //System.out.println(popedNode);
-            //System.out.println(grapheInterferance);
-
             //Coloration du graphe
             List<Integer> voisins = new ArrayList<Integer>();
             for(String voisin: grapheInterferance.get(popedNode)){
@@ -578,9 +561,6 @@ public class PrintMachineCodeVisitor implements ParserVisitor {
 
             colorMap.put(popedNode, color);
         }
-
-        //System.out.println("grapheInterferance:  " + grapheInterferance);
-        //System.out.println("colorMap: " + colorMap);
 
         //itérer dans le CODE et changer les pointeurs ex : @a par ses registres
         for(MachLine line : CODE){
@@ -607,7 +587,6 @@ public class PrintMachineCodeVisitor implements ParserVisitor {
 
     // TODO: add any class you judge necessary, and explain them in the report. GOOD LUCK!
     public HashMap<String, ArrayList<String>> generateGrapheInterferance(HashMap<String, ArrayList<String>> grapheInterferance, List<String> nodes){
-        //HashMap<String, ArrayList<String>> grapheInterferance = new HashMap<>();
 
         for(MachLine line : CODE){
 
@@ -629,7 +608,6 @@ public class PrintMachineCodeVisitor implements ParserVisitor {
         }
 
         Collections.sort(nodes);
-        //System.out.println("nodees: " + nodes);
         return grapheInterferance;
     }
 }
