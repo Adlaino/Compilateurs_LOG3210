@@ -385,9 +385,9 @@ public class PrintMachineCodeVisitor implements ParserVisitor {
             for(Integer succNode : node.SUCC){
                 // OUT[node] = OUT[node] union IN[succNode];
                 for (String inSuccNode : CODE.get(succNode).Life_IN){
-                    //if(!node.Life_OUT.contains(inSuccNode)) { //TODO: était enlevé
+
                         node.Life_OUT.add(inSuccNode);
-                    //}
+
                 }
             }
 
@@ -423,8 +423,6 @@ public class PrintMachineCodeVisitor implements ParserVisitor {
 
     private void compute_NextUse() {
         // TODO: Implement NextUse algorithm on the CODE array (for machine code)
-
-        //clean Next_IN et Next_OUT si nécessaire
 
         Stack<MachLine> workList = new Stack<>();
 
@@ -474,90 +472,30 @@ public class PrintMachineCodeVisitor implements ParserVisitor {
         //       The pointers (ex: "@a") here should be replaced by registers (ex: R0) respecting the coloring algorithm
         //       described in the TP requirements.
 
-
-        //géneration du graphe d'interferance  (partie 4)
-        List<String> nodes = new ArrayList<String>();
-        HashMap<String, ArrayList<String>> grapheInterferance = new HashMap<String, ArrayList<String>>();
-        grapheInterferance = generateGrapheInterferance(grapheInterferance, nodes);
-
-
-        //partie 5:
-        //cloner grapheInterferance
-        List<String> nodes2 = new ArrayList<String>();
-        HashMap<String, ArrayList<String>> grapheInterferance2 = new HashMap<String, ArrayList<String>>();
-        grapheInterferance2 = generateGrapheInterferance(grapheInterferance2, nodes2);
-
-        Stack<String> nodesStack = new Stack<>();
-
-        while (grapheInterferance.size() != 0 ){
-
-            int biggestNodeNumberUnderREG = 0;
-            String nodeToStack = nodes.get(0);
-
-            for (String nodeJ : set_ordered(grapheInterferance.keySet())) {
-                //Sélectionnez le noeud ayant le nombre de voisin le plus proche et inferieur à REG.
-                if (biggestNodeNumberUnderREG < grapheInterferance.get(nodeJ).size() && grapheInterferance.get(nodeJ).size() < REG) {
-                    biggestNodeNumberUnderREG = grapheInterferance.get(nodeJ).size();
-                    nodeToStack = nodeJ;
-                }
-            }
-
-            //Enlevez le noeud du graphe ainsi que ses arrêtes et "push" le noeud sur la stack.
-            grapheInterferance.remove(nodeToStack);
-            nodes.remove(nodeToStack);
-
-            for (String nodeK : grapheInterferance.keySet()) {
-                if (grapheInterferance.get(nodeK).contains(nodeToStack)) {
-                    grapheInterferance.get(nodeK).remove(nodeToStack);
-                }
-            }
-
-            nodesStack.push(nodeToStack);
-
-        }
-
-        //e)
+        boolean grapheColoriee = false;
         HashMap<String, Integer> colorMap = new HashMap<>();    //node, color
 
-        while (nodesStack.size() != 0){
-            int color = 0;
-            String popedNode = nodesStack.pop();
-            grapheInterferance.put(popedNode, new ArrayList<String>());
+        HashMap<String, ArrayList<String>> grapheInterferance;
+        Stack<String> nodesToStack;
 
-            //ajoute des arrêts du popedNode
-            for(String nodeInGraph: set_ordered(grapheInterferance.keySet())){
-                if(grapheInterferance2.get(nodeInGraph).contains(popedNode)){
-                    grapheInterferance.get(nodeInGraph).add(popedNode);
-                }
-                if(grapheInterferance2.get(popedNode).contains(nodeInGraph)){
-                    grapheInterferance.get(popedNode).add(nodeInGraph);
-                }
-            }
+        while(!grapheColoriee) {
+            //géneration du graphe d'interferance  (partie 4)
+            grapheInterferance = new HashMap<>();
+            generateGrapheInterferance(grapheInterferance);
 
-            //Coloration du graphe
-            List<Integer> voisins = new ArrayList<Integer>();
-            for(String voisin: grapheInterferance.get(popedNode)){
-                if(colorMap.containsKey(voisin)){
-                    voisins.add(colorMap.get(voisin));
-                }
-            }
-
-            Collections.sort(voisins);
-            for(int i = 0; i<voisins.size(); i++){
-                if(voisins.get(i) == color){
-                    color++;
-                }
-            }
-
-            colorMap.put(popedNode, color);
+            //coloration du graphe (partie 5)
+            nodesToStack  = new Stack<>();
+            colorMap = new HashMap<>();
+            HashMap<String, ArrayList<String>> grapheInterferance2 = new HashMap<>((HashMap<String, ArrayList<String>>) grapheInterferance.clone());
+            grapheColoriee = colorGrapheInterferance(grapheInterferance, grapheInterferance2, colorMap, nodesToStack);
         }
 
         //itérer dans le CODE et changer les pointeurs ex : @a par ses registres
-        for(MachLine line : CODE){
+        for (MachLine line : CODE) {
 
-            for(int i = 0; i<line.line.size(); i++){
+            for (int i = 0; i < line.line.size(); i++) {
 
-                if(line.line.get(i).charAt(0) == '@'){
+                if (line.line.get(i).charAt(0) == '@') {
                     String registerNumber = "R" + colorMap.get(line.line.get(i));
                     line.line.set(i, registerNumber);
                 }
@@ -565,6 +503,58 @@ public class PrintMachineCodeVisitor implements ParserVisitor {
 
         }
 
+    }
+
+    public boolean colorGrapheInterferance(HashMap<String, ArrayList<String>> grapheInterferance, HashMap<String, ArrayList<String>> grapheInterferance2,  HashMap<String, Integer> colorMap, Stack<String> nodesToStack) {
+        String nodeToStack = "";
+
+        while (!grapheInterferance2.isEmpty()) {
+            nodeToStack = getNodeToStack(grapheInterferance2);
+
+            if(nodeToStack == "") {
+                spill(grapheInterferance2);
+                compute_LifeVar();
+                compute_NextUse();
+                return false;
+            }
+
+            grapheInterferance2.remove(nodeToStack);
+
+            for (String node : set_ordered(grapheInterferance2.keySet())) {
+                grapheInterferance2.get(node).remove(nodeToStack);
+            }
+
+            nodesToStack.push(nodeToStack);
+        }
+
+        while(!nodesToStack.isEmpty()) {
+
+            nodeToStack = nodesToStack.pop();
+            grapheInterferance2.put(nodeToStack, new ArrayList<>());
+            ArrayList<String> voisins = grapheInterferance.get(nodeToStack);
+
+            for (String voisin : voisins) {
+                if (grapheInterferance2.containsKey(voisin)) {
+                    grapheInterferance2.get(nodeToStack).add(voisin);
+                    grapheInterferance2.get(voisin).add(nodeToStack);
+                }
+            }
+
+            ArrayList<String> voisinsActuels = grapheInterferance2.get(nodeToStack);
+            int color = 0;
+            HashSet<Integer> voisinsCouleurs = new HashSet<>();
+
+            for (String voisin : voisinsActuels) {
+                voisinsCouleurs.add(colorMap.get(voisin));
+            }
+
+            while (voisinsCouleurs.contains(color)) {
+                color++;
+            }
+
+            colorMap.put(nodeToStack, color);
+        }
+        return true;
     }
 
 
@@ -576,29 +566,165 @@ public class PrintMachineCodeVisitor implements ParserVisitor {
     }
 
     // TODO: add any class you judge necessary, and explain them in the report. GOOD LUCK!
-    public HashMap<String, ArrayList<String>> generateGrapheInterferance(HashMap<String, ArrayList<String>> grapheInterferance, List<String> nodes){
 
-        for(MachLine line : CODE){
+    public void generateGrapheInterferance(HashMap<String, ArrayList<String>> grapheInterferance) {
+        for (MachLine ml: CODE) {
 
-            for (String k : set_ordered(line.Next_OUT.nextuse.keySet())) {
-                if(!nodes.contains(k)){
-                    nodes.add(k);
-                    grapheInterferance.put(k, new ArrayList<String>());
+            for (String k : set_ordered(ml.Next_OUT.nextuse.keySet())) {
+                if(!grapheInterferance.keySet().contains(k)) {
+                    grapheInterferance.put(k, new ArrayList<>());
                 }
 
-                for (String j : set_ordered(line.Next_OUT.nextuse.keySet())) {
+                for (String key : set_ordered(ml.Next_OUT.nextuse.keySet())) {
+                    if(!key.equals(k) && !grapheInterferance.get(k).contains(key)) {
+                        grapheInterferance.get(k).add(key);
+                    }
+                }
+            }
 
-                    if(!k.equals(j) && !grapheInterferance.get(k).contains(j)){
-                        grapheInterferance.get(k).add(j);
+        }
+    }
+
+    public String getNodeToStack(HashMap<String, ArrayList<String>> grapheInterferance) {
+        Integer maxVoisins = -1;
+        String nodeToStack = "";
+
+        for (String node : set_ordered(grapheInterferance.keySet())) {
+
+            Integer voisinsSize = grapheInterferance.get(node).size();
+
+            if(voisinsSize < REG && voisinsSize > maxVoisins) {
+                maxVoisins = voisinsSize;
+                nodeToStack = node;
+            }
+        }
+
+        return nodeToStack;
+    }
+
+    public HashSet<String> spilledNodes = new HashSet<>();
+
+    public void spill(HashMap<String, ArrayList<String>> grapheInterferance2) {
+
+        String nodeToSpill = "";
+        int voisinMax = 0;
+
+        for (String node : set_ordered(grapheInterferance2.keySet())) {
+
+            int nbVoisin = grapheInterferance2.get(node).size();
+
+            if(nbVoisin > voisinMax && !spilledNodes.contains(node)) {
+                voisinMax = nbVoisin;
+                nodeToSpill = node;
+            }
+        }
+
+        spilledNodes.add(nodeToSpill);
+
+        Integer first = 0;
+        Integer nbLine = 0;
+        boolean trouvee = false;
+        while (!trouvee) {
+            String operation = CODE.get(nbLine).line.get(0);
+            if(operation != "ST" && operation != "LD") {
+                String assigned = CODE.get(nbLine).line.get(1);
+                String left     = CODE.get(nbLine).line.get(2);
+                String right    = CODE.get(nbLine).line.get(3);
+
+                if(nodeToSpill.equals(assigned) || nodeToSpill.equals(left) || nodeToSpill.equals(right)) {
+                    first = nbLine;
+                    trouvee = true;
+                }
+            }
+            nbLine++;
+        }
+
+        String assigned = CODE.get(first).line.get(0);
+
+        if(assigned.equals(nodeToSpill)) {
+            CODE.add(first + 1, getSTLine(nodeToSpill));
+            compute_LifeVar();
+            compute_NextUse();
+        }
+
+
+        if(CODE.get(first).Next_OUT.nextuse.containsKey(nodeToSpill)) {
+
+            int nbNextUseLine = CODE.get(first).Next_OUT.nextuse.get(nodeToSpill).get(0);
+            CODE.add(nbNextUseLine, getLoadLine(nodeToSpill + "!", nodeToSpill));
+
+            for (int i = nbNextUseLine; i < CODE.size() - 1; i++) {
+
+                String operation = CODE.get(i).line.get(0);
+
+                String assign = CODE.get(i).line.get(1);
+                String left   = CODE.get(i).line.get(2);
+
+                if(assign.equals(nodeToSpill)) {
+                    CODE.get(i).line.set(1, nodeToSpill+"!");
+                }
+
+                if(left.equals(nodeToSpill)) {
+                    CODE.get(i).line.set(2, nodeToSpill+"!");
+                }
+
+                if (!operation.equals("LD") && !operation.equals("ST")) {
+                    String right = CODE.get(i).line.get(3);
+
+                    if (right.equals(nodeToSpill)) {
+                        CODE.get(i).line.set(3, nodeToSpill + "!");
                     }
                 }
 
             }
+        }
+
+        updateCODE();
+
+    }
+
+    public MachLine getSTLine(String variable) {
+        List<String> codeToPassBeforeOP = new ArrayList<>();
+        codeToPassBeforeOP.add("ST");
+        codeToPassBeforeOP.add(variable.substring(1));
+        codeToPassBeforeOP.add(variable);
+        return new MachLine(codeToPassBeforeOP);
+    }
+
+    public MachLine getLoadLine(String left, String right) {
+        List<String> codeToPassBeforeOP = new ArrayList<>();
+        codeToPassBeforeOP.add("LD");
+        codeToPassBeforeOP.add(left);
+        codeToPassBeforeOP.add(right.substring(1));
+        return new MachLine(codeToPassBeforeOP);
+    }
+
+    public void updateCODE() {
+
+        for (int i = 0; i < CODE.size(); i++) {
+            CODE.get(i).PRED.clear();
+
+            if(i > 0) {
+                CODE.get(i).PRED.add(i - 1);
+            }
+
+            CODE.get(i).SUCC.clear();
+            if(i < CODE.size() - 1) {
+                CODE.get(i).SUCC.add(i + 1);
+            }
+
+            List<String> line = CODE.get(i).line;
+
+            CODE.get(i).DEF.clear();
+            CODE.get(i).DEF.add(line.get(1));
+
+            CODE.get(i).REF.clear();
+            for (int j = 2; j < line.size(); j++) {
+                if (line.get(j).charAt(0) == '@')
+                    CODE.get(i).REF.add(line.get(j));
+            }
 
         }
 
-        Collections.sort(nodes);
-        return grapheInterferance;
     }
-
 }
