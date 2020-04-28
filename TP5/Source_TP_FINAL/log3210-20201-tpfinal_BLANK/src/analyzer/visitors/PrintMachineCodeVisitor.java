@@ -67,7 +67,7 @@ public class PrintMachineCodeVisitor implements ParserVisitor {
 
             // TODO: the returned variables should be added to the Life_OUT set of the last statement of the basic block (before the "ST" expressions in the machine code)
 
-            CODE.get(CODE.size()-1).Life_OUT.add("@" + ((ASTIdentifier) node.jjtGetChild(i)).getValue());
+            CODE.get(CODE.size() - 1).Life_OUT.add("@" + ((ASTIdentifier) node.jjtGetChild(i)).getValue());
 
             //Selon moi (Roman), c'est ici qu'il faut faire les "ST"
             for(int j = 0; j < MODIFIED.size(); j++){
@@ -385,48 +385,38 @@ public class PrintMachineCodeVisitor implements ParserVisitor {
             for(Integer succNode : node.SUCC){
                 // OUT[node] = OUT[node] union IN[succNode];
                 for (String inSuccNode : CODE.get(succNode).Life_IN){
-                    if(!node.Life_OUT.contains(inSuccNode)) {
+                    //if(!node.Life_OUT.contains(inSuccNode)) { //TODO: était enlevé
                         node.Life_OUT.add(inSuccNode);
-                    }
+                    //}
                 }
             }
 
             // OLD_IN = IN[node];
             HashSet<String> OLD_IN = node.Life_IN;
 
-            //IN[node] = (OUT[node] − DEF[node]) union REF[node];
-
             //temp = OUT[node] - DEF[node]
             HashSet temp = (HashSet)node.Life_OUT.clone();
-            for(String def : node.DEF){
-                if(temp.contains(def)){
-                    temp.remove(def);
+
+            temp.removeAll(node.DEF);
+            temp.addAll(node.REF);
+            node.Life_IN = (HashSet<String>) temp.clone();
+
+            if(!node.Life_IN.equals(OLD_IN)) {
+                for (Integer predNode : node.PRED){
+                    MachLine line = CODE.get(predNode);
+                    workList.push(line);
                 }
             }
 
-            //IN [ node ] = temp union REF[node]
-            for (String refNode : node.REF){
-                if(!temp.contains(refNode)) {
-                    temp.add(refNode);
-                }
+            if (node.SUCC.isEmpty()) {
+                RETURNED.forEach(value -> {
+                    if (!MODIFIED.contains(value)) {
+                        node.Life_IN.add(value);
+                        node.Life_OUT.add(value);
+                    }
+                });
             }
 
-            node.Life_IN = temp;
-
-            // if (node.IN != OLD_IN)
-            boolean hashSetEqual = true;
-            for(String current: node.Life_IN){
-                if(!OLD_IN.contains(current)){
-                    hashSetEqual = false;
-                }
-            }
-
-            // if (node.IN != OLD_IN)
-            if(!hashSetEqual){
-                for(Integer predNode: node.PRED){
-                    workList.push(CODE.get(predNode));
-                }
-            }
 
         }
     }
@@ -610,4 +600,5 @@ public class PrintMachineCodeVisitor implements ParserVisitor {
         Collections.sort(nodes);
         return grapheInterferance;
     }
+
 }
